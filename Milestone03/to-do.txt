@@ -1,0 +1,13 @@
+Project Milestone 3 (Notes)
+Submission Date [tentative]: April 15, 2025 (Tuesday)
+Presentation: TBA (Sir Ilay consultation)
+
+TO-DO: 
+- SQL Queries and Database Objects: include queries, stored procedures, and
+triggers, as needed.
+
+FACTORS TO CONSIDER: 
+<>
+
+INSTRUCTOR'S FEEDBACK: 
+<>

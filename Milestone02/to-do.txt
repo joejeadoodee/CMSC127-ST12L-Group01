@@ -1,0 +1,12 @@
+Project Milestone 2 (Notes)
+Submission Date [tentative]: March 11, 2025 (Tuesday)
+Presentation: TBA (Sir Ilay consultation)
+
+TO-DO: 
+ERD to Relational Tables: Convert the finalized ERD into relational tables.
+
+FACTORS TO CONSIDER: 
+<>
+
+INSTRUCTOR'S FEEDBACK: 
+<>
