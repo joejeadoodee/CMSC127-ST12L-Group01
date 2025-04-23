@@ -5,8 +5,5 @@ Presentation: TBA (Sir Ilay consultation)
 TO-DO: 
 ERD to Relational Tables: Convert the finalized ERD into relational tables.
 
-FACTORS TO CONSIDER: 
-<>
-
 INSTRUCTOR'S FEEDBACK: 
-<>
+"Add a relationship between OBLIGATION and ORGANIZATION to know which org gave which fee"
