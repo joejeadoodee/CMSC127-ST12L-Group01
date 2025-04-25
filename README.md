@@ -48,4 +48,4 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/joejeadoodee/CMSC127-ST12L.git
+git clone https://github.com/joejeadoodee/CMSC127-ST12L-Group01.git
