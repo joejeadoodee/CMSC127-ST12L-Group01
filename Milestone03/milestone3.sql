@@ -82,7 +82,7 @@ VALUES(1, 'jalonzo', 'Joejean Alonzo', '123456789', 2022, 'Active', 'F', FALSE);
 
 -- ADD: member's degree program
 INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
-VALUES(1, 'jalonzo', 'BSCS'); -
+VALUES(1, 'jalonzo', 'BSCS');
 
 -- ADD: organization
 INSERT INTO ORGANIZATION(organization_id, name, number_of_members)
@@ -93,8 +93,8 @@ INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total
 VALUES(1, '2nd semester', 2025, 'Membership Fee', 500, '2025-06-15', 0.00, 1); 
 
 -- ADD: payment
-INSERT INTO PAYMENT(amount_paid, payment_date, record_id, member_id, username)
-VALUES(150.00, '2025-04-25', 1, 1, 'jalonzo'); 
+INSERT INTO PAYMENT(payment_id, amount_paid, payment_date, record_id, member_id, username)
+VALUES(1, 150.00, '2025-04-25', 1, 1, 'jalonzo'); 
 
 -- ADD: member role (SERVES)
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
@@ -129,3 +129,15 @@ WHERE organization_id = 1;
 UPDATE SERVES
 SET role = 'Member', committee = 'Pub', semester = '2nd semester'
 WHERE member_id = 1 AND username = 'jalonzo' AND organization_id = 1;
+
+-- SELECT: track member current roles
+SELECT ranked.member_id, ranked.username, ranked.role
+FROM (
+  SELECT *,
+         ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY school_year DESC, FIELD(semester, 'First semester', 'Second semester', 'Mid semester') DESC) AS rn
+  FROM SERVES
+) ranked
+WHERE rn = 1;
+
+-- SELECT: track member status
+SELECT member_id, username, status FROM MEMBER;
