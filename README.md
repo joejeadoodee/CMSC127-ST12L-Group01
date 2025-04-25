@@ -22,7 +22,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 - Manage membership fees and dues per member and organization.
 - Generate financial reports.
 
-## Reports to Generate
+## Reports to be Generated
 
 1. View all members of the organization by role, status, gender, degree program, batch (year of membership), and committee. 
 2. View members for a given organization with unpaid membership fees or dues for a given semester and academic year.
