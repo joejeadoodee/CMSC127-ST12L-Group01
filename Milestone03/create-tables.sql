@@ -48,7 +48,23 @@ CREATE TABLE PAYMENT(
 );
 
 -- create: ORGANIZATION table
-
+CREATE TABLE ORGANIZATION (
+    organization_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    number_of_members INT NOT NULL,
+    PRIMARY KEY (organization_id)
+);
 
 -- create: SERVES table
-
+CREATE TABLE SERVES (
+    member_id INT NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    organization_id INT NOT NULL,
+    role VARCHAR(100) NOT NULL,
+    school_year VARCHAR(10) NOT NULL,
+    committee VARCHAR(100) NOT NULL,
+    semester VARCHAR(10) NOT NULL,
+    PRIMARY KEY (member_id, username, organization_id, role, school_year, committee, semester),
+    FOREIGN KEY (organization_id) REFERENCES ORGANIZATION(organization_id),
+    FOREIGN KEY (member_id, username) REFERENCES MEMBER(member_id, username)
+);
