@@ -145,7 +145,7 @@ SELECT member_id, username, status FROM MEMBER;
 
 
 -- View members for a given organization with unpaid membership fees or dues for a given semester and academic year
-SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.organization_id, osmfp.org_name, osmfp.academic_year, osmfp.semester, SUM(osmfp.amount_paid) total_amount_paid, osmfp.total_due 
+SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, SUM(osmfp.amount_paid) total_amount_paid, osmfp.total_due 
 FROM (
     SELECT *
     FROM (
@@ -166,6 +166,7 @@ FROM (
     ) fp
     ON osm.mem_id=fp.member_id
 ) osmfp 
-WHERE organization_id = 1
+WHERE org_id = 1
 GROUP BY member_id, record_id, organization_id 
-HAVING total_amount_paid < total_due;
+HAVING total_amount_paid < total_due or osmfp.record_id is NULL;
+

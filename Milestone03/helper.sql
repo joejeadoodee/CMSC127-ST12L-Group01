@@ -1,8 +1,8 @@
-SELECT osmfp.mem_id, osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id, osmfp.org_name, osmfp.academic_year, osmfp.semester, SUM(osmfp.amount_paid) total_amount_paid, osmfp.total_due 
+SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, SUM(osmfp.amount_paid) total_amount_paid, osmfp.total_due 
 FROM (
     SELECT *
     FROM (
-        SELECT DISTINCT organization_id as 'org_id', name as 'org_name', member_id as 'mem_id', full_name FROM (
+        SELECT DISTINCT organization_id as `org_id`, name as 'org_name', member_id as 'mem_id', full_name FROM (
             SELECT *
             FROM (SELECT * FROM ORGANIZATION) o
             LEFT JOIN (SELECT organization_id as org_id, member_id as 'mem_id' FROM SERVES) s
@@ -19,5 +19,6 @@ FROM (
     ) fp
     ON osm.mem_id=fp.member_id
 ) osmfp 
+WHERE org_id = 1
 GROUP BY member_id, record_id, organization_id 
-HAVING total_amount_paid < total_due;
+HAVING total_amount_paid < total_due or osmfp.record_id is NULL;
