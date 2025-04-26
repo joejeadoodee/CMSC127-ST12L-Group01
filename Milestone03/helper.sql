@@ -1,4 +1,4 @@
-SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, SUM(osmfp.amount_paid) total_amount_paid, osmfp.total_due 
+SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, osmfp.total_due, osmfp.payment_date, osmfp.due_date 
 FROM (
     SELECT *
     FROM (
@@ -18,7 +18,5 @@ FROM (
         ON f.record_id=p.p_record_id
     ) fp
     ON osm.mem_id=fp.member_id
+    WHERE payment_date > due_date
 ) osmfp 
-WHERE org_id = 1
-GROUP BY member_id, record_id, organization_id 
-HAVING total_amount_paid < total_due or osmfp.record_id is NULL;
