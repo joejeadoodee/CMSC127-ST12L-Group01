@@ -43,7 +43,6 @@ CREATE TABLE FINANCIAL_OBLIGATION(
     name VARCHAR(100) NOT NULL,
     total_due INT NOT NULL,
     due_date DATE NOT NULL,
-    amount_paid DECIMAL(10,2) DEFAULT 0.00 NOT NULL,
     organization_id INT NOT NULL,
     PRIMARY KEY(record_id),
     FOREIGN KEY(organization_id) REFERENCES ORGANIZATION(organization_id)
@@ -89,8 +88,8 @@ INSERT INTO ORGANIZATION(organization_id, name, number_of_members)
 VALUES(1, 'UPLB GDS', 39); 
 
 -- ADD: financial obligation
-INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, amount_paid, organization_id)
-VALUES(1, '2nd semester', 2025, 'Membership Fee', 500, '2025-06-15', 0.00, 1); 
+INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
+VALUES(1, '2nd semester', 2025, 'Membership Fee', 500, '2025-06-15', 1); 
 
 -- ADD: payment
 INSERT INTO PAYMENT(payment_id, amount_paid, payment_date, record_id, member_id, username)
@@ -112,7 +111,7 @@ WHERE member_id = 1 AND username = 'jalonzo';
 
 -- UPDATE: amount due financial obligation
 UPDATE FINANCIAL_OBLIGATION
-SET total_due = 600, amount_paid = 150.00
+SET total_due = 600,
 WHERE record_id = 1;
 
 -- UPDATE: payment 
@@ -141,3 +140,14 @@ WHERE rn = 1;
 
 -- SELECT: track member status
 SELECT member_id, username, status FROM MEMBER;
+
+-- View members for a given organization with unpaid membership fees or dues for a given semester and academic year
+
+
+SELECT fop.member_id, SUM(fop.amount_paid) FROM (
+    SELECT * FROM (
+        SELECT payment_id, amount_paid, payment_date, record_id as p_record_id, member_id, username FROM PAYMENT
+    ) p 
+    LEFT JOIN FINANCIAL_OBLIGATION f 
+    ON p.p_record_id=f.record_id
+) fop GROUP BY member_id;
