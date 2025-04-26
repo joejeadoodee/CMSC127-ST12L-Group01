@@ -199,6 +199,16 @@ FROM (
 ) osmfp 
 GROUP BY member_id, record_id, organization_id 
 
+
+
+-- View all Presidents (or any other role) of a given organization for every academic year in reverse chronological order
+SELECT member_id, username, role, school_year, semester 
+FROM SERVES
+WHERE role = 'Member'
+ORDER BY 
+  school_year DESC,
+  FIELD(semester, '1st semester', '2nd semester', 'Mid semester') DESC;
+
 -- View members for a given organization with unpaid membership fees or dues for a given semester and academic year
 SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, COALESCE(SUM(osmfp.amount_paid),0)  total_amount_paid, osmfp.total_due 
 FROM (
