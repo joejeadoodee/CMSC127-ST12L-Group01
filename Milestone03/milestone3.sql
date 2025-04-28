@@ -158,6 +158,34 @@ UPDATE SERVES
 SET role = 'Member', committee = 'Pub', semester = '2nd semester'
 WHERE member_id = 1 AND username = 'jalonzo' AND organization_id = 1;
 
+--DELETE: FROM SERVES
+DELETE FROM SERVES
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM Payment
+DELETE FROM PAYMENT
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM Financial obligation
+DELETE FROM FINANCIAL_OBLIGATION
+WHERE record_id = 1; -- Adjust based on actual record_id
+
+--DELETE: FROM MEMBER_DEGREE_PROGRAM
+DELETE FROM MEMBER_DEGREE_PROGRAM
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM MEMBER
+DELETE FROM MEMBER
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM ORGANIZATION
+DELETE FROM ORGANIZATION
+WHERE organization_id = 1; -- Adjust on actual organization_id 
+
+--SEARCH MEMBER
+SELECT * FROM MEMBER
+WHERE member_id = 1 OR username = 'jalonzo';
+
 -- SELECT: track member current roles
 SELECT ranked.member_id, ranked.username, ranked.role
 FROM (
@@ -200,7 +228,6 @@ FROM (
 GROUP BY member_id, record_id, organization_id 
 
 
-
 -- View all Presidents (or any other role) of a given organization for every academic year in reverse chronological order
 SELECT member_id, username, role, school_year, semester 
 FROM SERVES
@@ -208,6 +235,27 @@ WHERE role = 'Member'
 ORDER BY 
   school_year DESC,
   FIELD(semester, '1st semester', '2nd semester', 'Mid semester') DESC;
+
+--View all members of the organization by role, status, gender, degree program, batch (year of membership), and committee. (Note: we assume one committee membership only per organization per semester)
+SELECT 
+    m.member_id,
+    m.username,
+    m.name,
+    m.status,
+    m.gender,
+    md.degree_program,
+    m.batch,
+    s.role,
+    s.committee
+FROM 
+    MEMBER m
+JOIN 
+    MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id AND m.username = md.username
+JOIN 
+    SERVES s ON m.member_id = s.member_id AND m.username = s.username
+WHERE 
+    s.organization_id = 1; -- Replace with the actual organization_id
+
 
 -- View members for a given organization with unpaid membership fees or dues for a given semester and academic year
 SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, COALESCE(SUM(osmfp.amount_paid),0)  total_amount_paid, osmfp.total_due 
@@ -239,6 +287,45 @@ FROM (
 GROUP BY member_id, record_id, organization_id 
 HAVING total_amount_paid < total_due and org_id = 1 and academic_year = 2025 and semester = '1st semester' ;
 
+--View a member’s unpaid membership fees or dues for all their organizations (Member’s POV).
+SELECT 
+    m.member_id,
+    m.username,
+    o.name AS organization_name,
+    fo.record_id,
+    fo.semester,
+    fo.academic_year,
+    fo.total_due,
+    fo.amount_paid,
+    (fo.total_due - fo.amount_paid) AS amount_unpaid
+FROM 
+    MEMBER m
+JOIN 
+    PAYMENT p ON m.member_id = p.member_id AND m.username = p.username
+JOIN 
+    FINANCIAL_OBLIGATION fo ON p.record_id = fo.record_id
+JOIN 
+    ORGANIZATION o ON fo.organization_id = o.organization_id
+WHERE 
+    m.member_id = 1 AND m.username = 'jalonzo' -- Can replace with the actual member's ID and username
+    AND (fo.total_due - fo.amount_paid) > 0;
+
+--View all executive committee members of a given organization for a given academic year.
+SELECT 
+    m.member_id,
+    m.username,
+    m.name,
+    s.role,
+    s.committee,
+    s.school_year
+FROM 
+    MEMBER m
+JOIN 
+    SERVES s ON m.member_id = s.member_id AND m.username = s.username
+WHERE 
+    s.organization_id = 1 AND -- Can replace with the actual organization ID
+    s.school_year = '2024-2025' AND -- Can replace with the desired academic year
+    s.role = 'Executive Committee'; 
 
 -- View all late payments made by all members of a given organization for a given semester and academic year
 SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, COALESCE(osmfp.amount_paid, 0) 'amount_paid', osmfp.total_due , osmfp.payment_date, osmfp.due_date
