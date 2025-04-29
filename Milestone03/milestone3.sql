@@ -399,21 +399,35 @@ GROUP BY organization_id;
 
 -- View the percentage of active vs inactive members of a given organization for the last n semesters. (Note: n is a positive integer)
 SELECT 
-    SUM(CASE WHEN m.status = 'active' THEN 1 ELSE 0 END) AS active_members,
-    SUM(CASE WHEN m.status = 'inactive' THEN 1 ELSE 0 END) AS inactive_members,
+    ms.organization_id,
+    ms.school_year,
+    SUM(CASE WHEN ms.status = 'Active' THEN 1 ELSE 0 END) AS active_members,
+    SUM(CASE WHEN ms.status = 'Inactive' THEN 1 ELSE 0 END) AS inactive_members,
     COUNT(*) AS total_members,
-    (SUM(CASE WHEN m.status = 'active' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS active_percentage,
-    (SUM(CASE WHEN m.status = 'inactive' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS inactive_percentage
-FROM 
-    MEMBER m
-JOIN 
-    SERVES s ON m.member_id = s.member_id
-WHERE 
-    s.organization_id = 1 -- replace with the actual organization_id
-    AND s.school_year >= YEAR(CURDATE()) - n -- replace n with the number of semesters 
-    AND s.semester IN ('1st semester', '2nd semester', 'Mid semester')
-GROUP BY 
-    s.school_year, s.semester;
+    ROUND((SUM(CASE WHEN ms.status = 'Active' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS active_percentage,
+    ROUND((SUM(CASE WHEN ms.status = 'Inactive' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS inactive_percentage
+
+FROM (
+    SELECT 
+        m.member_id,
+        m.username,
+        m.status,
+        s.organization_id,
+        s.school_year
+    FROM 
+        MEMBER m
+    JOIN 
+        SERVES s ON m.member_id = s.member_id AND m.username = s.username
+    WHERE 
+        s.organization_id = 1 -- Replace with desired org ID
+        AND (
+            s.school_year >= (YEAR(CURDATE()) - FLOOR(2 / 2)) -- Adjust to reflect n semesters (e.g. FLOOR(n/2))
+        )
+        AND s.semester IN ('1st semester', '2nd semester', 'Mid semester')
+    GROUP BY 
+        m.member_id, m.username, m.status
+) ms;
+
 
 -- View all alumni members of a given organization as of a given date.
 SELECT 
