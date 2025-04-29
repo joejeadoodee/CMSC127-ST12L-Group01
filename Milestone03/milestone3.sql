@@ -24,7 +24,7 @@ CREATE TABLE MEMBER_DEGREE_PROGRAM(
     username VARCHAR(50) NOT NULL,
     degree_program VARCHAR(100) NOT NULL,
     PRIMARY KEY(member_id, username, degree_program),
-    FOREIGN KEY(member_id, username) REFERENCES MEMBER(member_id, username)
+    FOREIGN KEY(member_id, username) REFERENCES MEMBER(member_id, username) ON DELETE CASCADE
 );
 
 -- create: ORGANIZATION table
@@ -45,7 +45,7 @@ CREATE TABLE FINANCIAL_OBLIGATION(
     due_date DATE NOT NULL,
     organization_id INT NOT NULL,
     PRIMARY KEY(record_id),
-    FOREIGN KEY(organization_id) REFERENCES ORGANIZATION(organization_id)
+    FOREIGN KEY(organization_id) REFERENCES ORGANIZATION(organization_id) ON DELETE CASCADE
 );
 
 -- create: PAYMENT table
@@ -57,8 +57,8 @@ CREATE TABLE PAYMENT(
     member_id INT NOT NULL,
     username VARCHAR(50) NOT NULL,
     PRIMARY KEY(payment_id),
-    FOREIGN KEY(record_id) REFERENCES FINANCIAL_OBLIGATION(record_id),
-    FOREIGN KEY(member_id, username) REFERENCES MEMBER(member_id, username)
+    FOREIGN KEY(record_id) REFERENCES FINANCIAL_OBLIGATION(record_id) ON DELETE CASCADE,
+    FOREIGN KEY(member_id, username) REFERENCES MEMBER(member_id, username) ON DELETE CASCADE
 );
 
 -- create: SERVES table
@@ -71,8 +71,8 @@ CREATE TABLE SERVES (
     committee VARCHAR(100) NOT NULL,
     semester VARCHAR(50) NOT NULL,
     PRIMARY KEY (member_id, username, organization_id, role, school_year, committee, semester),
-    FOREIGN KEY (organization_id) REFERENCES ORGANIZATION(organization_id),
-    FOREIGN KEY (member_id, username) REFERENCES MEMBER(member_id, username)
+    FOREIGN KEY (organization_id) REFERENCES ORGANIZATION(organization_id) ON DELETE CASCADE,
+    FOREIGN KEY (member_id, username) REFERENCES MEMBER(member_id, username) ON DELETE CASCADE
 );
 
 -- ADD: new member
