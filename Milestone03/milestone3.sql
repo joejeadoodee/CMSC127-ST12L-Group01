@@ -157,29 +157,7 @@ UPDATE SERVES
 SET role = 'Member', committee = 'Pub', semester = '2nd semester'
 WHERE member_id = 1 AND username = 'jalonzo' AND organization_id = 1;
 
---DELETE: FROM SERVES
-DELETE FROM SERVES
-WHERE member_id = 1 AND username = 'jalonzo';
 
---DELETE: FROM Payment
-DELETE FROM PAYMENT
-WHERE member_id = 1 AND username = 'jalonzo';
-
---DELETE: FROM Financial obligation
-DELETE FROM FINANCIAL_OBLIGATION
-WHERE record_id = 1; -- Adjust based on actual record_id
-
---DELETE: FROM MEMBER_DEGREE_PROGRAM
-DELETE FROM MEMBER_DEGREE_PROGRAM
-WHERE member_id = 1 AND username = 'jalonzo';
-
---DELETE: FROM MEMBER
-DELETE FROM MEMBER
-WHERE member_id = 1 AND username = 'jalonzo';
-
---DELETE: FROM ORGANIZATION
-DELETE FROM ORGANIZATION
-WHERE organization_id = 1; -- Adjust on actual organization_id 
 
 --SEARCH MEMBER
 SELECT * FROM MEMBER
@@ -361,7 +339,7 @@ FROM (
     ) p
     ON p.member_id = r.mem_id
     WHERE (payment_date > due_date or payment_date is NULL) and academic_year = 2025 and semester = '1st semester' and org_id = 1
-) osmfp 
+) osmfp;
 
 -- View the total amount of unpaid and paid fees or dues of a given organization as of a given date.
 
@@ -452,3 +430,29 @@ WHERE
     AND s.school_year <= YEAR('2025-04-29') -- replace with the given date
 ORDER BY 
     m.name;
+
+
+
+--DELETE: FROM SERVES
+DELETE FROM SERVES
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM Payment
+DELETE FROM PAYMENT
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM Financial obligation
+DELETE FROM FINANCIAL_OBLIGATION
+WHERE record_id = 1; -- Adjust based on actual record_id
+
+--DELETE: FROM MEMBER_DEGREE_PROGRAM
+DELETE FROM MEMBER_DEGREE_PROGRAM
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM MEMBER
+DELETE FROM MEMBER
+WHERE member_id = 1 AND username = 'jalonzo';
+
+--DELETE: FROM ORGANIZATION
+DELETE FROM ORGANIZATION
+WHERE organization_id = 1; -- Adjust on actual organization_id 
