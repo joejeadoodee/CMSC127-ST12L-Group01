@@ -50,7 +50,7 @@ CREATE TABLE FINANCIAL_OBLIGATION(
 
 -- create: PAYMENT table
 CREATE TABLE PAYMENT(
-    payment_id INT NOT NULL AUTO_INCREMENT,
+    payment_id INT NOT NULL,
     amount_paid DECIMAL(10,2) DEFAULT 0.00 NOT NULL,
     payment_date DATE NOT NULL,
     record_id INT NOT NULL,
@@ -94,7 +94,6 @@ INSERT INTO ORGANIZATION(organization_id, name, number_of_members)
 VALUES(1, 'UPLB GDS', 39); 
 INSERT INTO ORGANIZATION(organization_id, name, number_of_members)
 VALUES(2, 'YCSS', 21); 
-INSERT INTO ORGANIZATION(organization_id, name, number_of_members)
 
 -- ADD: financial obligation
 INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
@@ -140,7 +139,7 @@ WHERE member_id = 1 AND username = 'jalonzo';
 
 -- UPDATE: amount due financial obligation
 UPDATE FINANCIAL_OBLIGATION
-SET total_due = 600,
+SET total_due = 600
 WHERE record_id = 1;
 
 -- UPDATE: payment 
@@ -189,9 +188,9 @@ WHERE member_id = 1 OR username = 'jalonzo';
 -- SELECT: track member current roles
 SELECT ranked.member_id, ranked.username, ranked.role
 FROM (
-  SELECT *,
-         ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY school_year DESC, FIELD(semester, 'First semester', 'Second semester', 'Mid semester') DESC) AS rn
-  FROM SERVES
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY school_year DESC, FIELD(semester, 'First semester', 'Second semester', 'Mid semester') DESC) AS rn
+    FROM SERVES
 ) ranked
 WHERE rn = 1;
 
@@ -389,3 +388,39 @@ FROM (
     GROUP BY member_id, record_id, organization_id 
 ) grouped
 GROUP BY organization_id;
+
+-- view all Presidents (or any other role) of a given organization for every academic year in reverse chronological order
+SELECT 
+    member_id, 
+    username, 
+    role, 
+    school_year, 
+    semester 
+FROM 
+    SERVES
+WHERE 
+    role = 'President'  -- replace 'President' with any other role (placeholder only)
+    AND organization_id = 1  -- replace with the actual organization_id you want to filter by (placeholder only)
+ORDER BY 
+    school_year DESC, 
+    FIELD(semester, '1st semester', '2nd semester', 'Mid semester') DESC;
+
+-- view all members of the organization by role, status, gender, degree program, batch (year of membership), and committee
+SELECT 
+    m.member_id,
+    m.username,
+    m.name,
+    m.status,
+    m.gender,
+    md.degree_program,
+    m.batch,
+    s.role,
+    s.committee
+FROM 
+    MEMBER m
+JOIN 
+    MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id AND m.username = md.username
+JOIN 
+    SERVES s ON m.member_id = s.member_id AND m.username = s.username
+WHERE 
+    s.organization_id = 1; --  replace with the actual organization_id you want to filter by (placeholder only)

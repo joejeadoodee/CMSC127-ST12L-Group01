@@ -1,4 +1,4 @@
-SELECT grouped.organization_id, grouped.org_name, SUM(grouped.total_due - grouped.total_amount_paid) 'Amount unpaid'
+SELECT grouped.organization_id, grouped.org_name, SUM(grouped.total_due - grouped.total_amount_paid) AS 'Amount unpaid'
 FROM (
     SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, SUM(osmfp.amount_paid) total_amount_paid, SUM(osmfp.total_due) total_due 
     FROM (
