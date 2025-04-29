@@ -389,23 +389,25 @@ FROM (
 ) grouped
 GROUP BY organization_id;
 
--- view all Presidents (or any other role) of a given organization for every academic year in reverse chronological order
+-- View the percentage of active vs inactive members of a given organization for the last n semesters. (Note: n is a positive integer)
 SELECT 
-    member_id, 
-    username, 
-    role, 
-    school_year, 
-    semester 
+    SUM(CASE WHEN m.status = 'active' THEN 1 ELSE 0 END) AS active_members,
+    SUM(CASE WHEN m.status = 'inactive' THEN 1 ELSE 0 END) AS inactive_members,
+    COUNT(*) AS total_members,
+    (SUM(CASE WHEN m.status = 'active' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS active_percentage,
+    (SUM(CASE WHEN m.status = 'inactive' THEN 1 ELSE 0 END) / COUNT(*)) * 100 AS inactive_percentage
 FROM 
-    SERVES
+    MEMBER m
+JOIN 
+    SERVES s ON m.member_id = s.member_id
 WHERE 
-    role = 'President'  -- replace 'President' with any other role (placeholder only)
-    AND organization_id = 1  -- replace with the actual organization_id you want to filter by (placeholder only)
-ORDER BY 
-    school_year DESC, 
-    FIELD(semester, '1st semester', '2nd semester', 'Mid semester') DESC;
+    s.organization_id = 1 -- replace with the actual organization_id
+    AND s.school_year >= YEAR(CURDATE()) - n -- replace n with the number of semesters 
+    AND s.semester IN ('1st semester', '2nd semester', 'Mid semester')
+GROUP BY 
+    s.school_year, s.semester;
 
--- view all members of the organization by role, status, gender, degree program, batch (year of membership), and committee
+-- View all alumni members of a given organization as of a given date.
 SELECT 
     m.member_id,
     m.username,
@@ -419,8 +421,12 @@ SELECT
 FROM 
     MEMBER m
 JOIN 
-    MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id AND m.username = md.username
+    MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id
 JOIN 
-    SERVES s ON m.member_id = s.member_id AND m.username = s.username
+    SERVES s ON m.member_id = s.member_id
 WHERE 
-    s.organization_id = 1; --  replace with the actual organization_id you want to filter by (placeholder only)
+    s.organization_id = 1 -- replace with the actual organization_id
+    AND m.status = 'alumni'
+    AND s.school_year <= YEAR('2025-04-29') -- replace with the given date
+ORDER BY 
+    m.name;
