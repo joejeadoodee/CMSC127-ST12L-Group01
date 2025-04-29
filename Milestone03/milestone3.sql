@@ -224,7 +224,7 @@ FROM (
     ) p
     ON p.member_id = r.mem_id
 ) osmfp 
-GROUP BY member_id, record_id, organization_id 
+GROUP BY member_id, record_id, organization_id;
 
 
 -- View all Presidents (or any other role) of a given organization for every academic year in reverse chronological order
