@@ -186,7 +186,7 @@ SELECT * FROM MEMBER
 WHERE member_id = 1 OR username = 'jalonzo';
 
 -- SELECT: track member current roles
-SELECT ranked.member_id, ranked.username, ranked.role
+SELECT ranked.member_id, ranked.username, ranked.role, ranked.committee, ranked.semester
 FROM (
     SELECT *,
            ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY school_year DESC, FIELD(semester, 'First semester', 'Second semester', 'Mid semester') DESC) AS rn
