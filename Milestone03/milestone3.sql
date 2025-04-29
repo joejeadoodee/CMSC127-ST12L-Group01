@@ -224,7 +224,7 @@ FROM (
     ) p
     ON p.member_id = r.mem_id
 ) osmfp 
-GROUP BY member_id, record_id, organization_id 
+GROUP BY member_id, record_id, organization_id;
 
 
 -- View all Presidents (or any other role) of a given organization for every academic year in reverse chronological order
@@ -287,27 +287,34 @@ GROUP BY member_id, record_id, organization_id
 HAVING total_amount_paid < total_due and org_id = 1 and academic_year = 2025 and semester = '1st semester' ;
 
 --View a member’s unpaid membership fees or dues for all their organizations (Member’s POV).
-SELECT 
-    m.member_id,
-    m.username,
-    o.name AS organization_name,
-    fo.record_id,
-    fo.semester,
-    fo.academic_year,
-    fo.total_due,
-    fo.amount_paid,
-    (fo.total_due - fo.amount_paid) AS amount_unpaid
-FROM 
-    MEMBER m
-JOIN 
-    PAYMENT p ON m.member_id = p.member_id AND m.username = p.username
-JOIN 
-    FINANCIAL_OBLIGATION fo ON p.record_id = fo.record_id
-JOIN 
-    ORGANIZATION o ON fo.organization_id = o.organization_id
-WHERE 
-    m.member_id = 1 AND m.username = 'jalonzo' -- Can replace with the actual member's ID and username
-    AND (fo.total_due - fo.amount_paid) > 0;
+SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, COALESCE(SUM(osmfp.amount_paid),0)  total_amount_paid, osmfp.total_due 
+FROM (
+    SELECT *
+    FROM (
+        SELECT *
+        FROM (
+            SELECT DISTINCT organization_id as `org_id`, name as 'org_name', member_id as 'mem_id', full_name FROM (
+                SELECT *
+                FROM (SELECT * FROM ORGANIZATION) o
+                LEFT JOIN (SELECT organization_id as org_id, member_id as 'mem_id' FROM SERVES) s
+                ON o.organization_id=s.org_id
+            ) os
+            LEFT JOIN (SELECT member_id, username, name as 'full_name', password, batch, status, gender, is_admin FROM MEMBER) m
+            ON os.mem_id=m.member_id
+        ) osm   
+        LEFT JOIN  (
+            SELECT * 
+            FROM FINANCIAL_OBLIGATION
+        ) fp
+        ON osm.org_id=fp.organization_id
+    ) r
+    LEFT JOIN (
+        SELECT payment_id, amount_paid, payment_date, record_id as 'p_record_id', member_id FROM PAYMENT
+    ) p
+    ON p.member_id = r.mem_id
+) osmfp 
+GROUP BY member_id, record_id, organization_id 
+HAVING total_amount_paid < total_due AND osmfp.mem_id = 4;  -- Can replace with member id
 
 --View all executive committee members of a given organization for a given academic year.
 SELECT 
@@ -316,15 +323,16 @@ SELECT
     m.name,
     s.role,
     s.committee,
-    s.school_year
+    s.school_year,
+    s.organization_id
 FROM 
     MEMBER m
 JOIN 
     SERVES s ON m.member_id = s.member_id AND m.username = s.username
 WHERE 
-    s.organization_id = 1 AND -- Can replace with the actual organization ID
+    s.organization_id = 2 AND -- Can replace with the actual organization ID
     s.school_year = '2024-2025' AND -- Can replace with the desired academic year
-    s.role = 'Executive Committee'; 
+    s.role != 'Member'; 
 
 -- View all late payments made by all members of a given organization for a given semester and academic year
 SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, COALESCE(osmfp.amount_paid, 0) 'amount_paid', osmfp.total_due , osmfp.payment_date, osmfp.due_date
