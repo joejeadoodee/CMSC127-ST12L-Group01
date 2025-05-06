@@ -41,11 +41,42 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 - **Milestone 2**: Revised Entity-Relationship Diagram to relational table 
 - **Milestone 3**: Create tables, core functionalities implementation (`add`, `update`, etc.) in progress
 
-
-## How to Run
-
->This section will be updated once full implementation is complete.
-
+## How to setup
 1. Clone the repository:
 ```bash
 git clone https://github.com/joejeadoodee/CMSC127-ST12L-Group01.git
+```
+
+2. Run the ff commands:
+```bash
+curl -LsSO https://r.mariadb.com/downloads/mariadb_repo_setup
+
+echo "c4a0f3dade02c51a6a28ca3609a13d7a0f8910cccbb90935a2f218454d3a914a  mariadb_repo_setup" \
+    | sha256sum -c -
+
+chmod +x mariadb_repo_setup
+sudo ./mariadb_repo_setup
+sudo apt install libmariadb3 libmariadb-dev
+
+sudo apt install python3.12-venv
+python3 -m venv myenv
+``` 
+
+3. Grant permission on "org" database to user "jojolanot". Make sure "org" exists.
+```bash
+sudo mariadb
+
+GRANT ALL PRIVILEGES ON org.* TO 'jojolanot'@'%';
+```
+
+
+## How to Run
+1. Run virtual environment
+```bash
+source myenv/bin/activate
+pip install -r requirements.txt
+```
+2. Run main.py
+```bash
+python3 main.py
+```
