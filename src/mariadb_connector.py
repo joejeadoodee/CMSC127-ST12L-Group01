@@ -1,6 +1,10 @@
 import mariadb 
 
+cursor = None
+conn = None 
+
 def connect():
+    global cursor, conn 
     print("Connecting to mariadb -------")
     conn = mariadb.connect( 
         user="jojolanot", 
@@ -9,5 +13,5 @@ def connect():
         database="org"
     ) 
 
-    cur = conn.cursor() 
-    print("CONNECTED ------ \n\n")
+    cursor = conn.cursor() 
+    print("CONNECTED ------")

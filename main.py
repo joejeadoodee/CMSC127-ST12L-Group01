@@ -1,15 +1,7 @@
-from src import screens, mariadb_connector
+from src.screens.welcome import welcome
+from src.mariadb_connector import connect
 
 if __name__ == "__main__":
-    mariadb_connector.connect()
-
-    while True:
-        screens.home()
-        user_input = input("Enter option: ")
-        
-        if user_input == "3":
-            break
-        
-        print("\n")
-
-
+    connect()
+    welcome()
+    print("-" * 10)
