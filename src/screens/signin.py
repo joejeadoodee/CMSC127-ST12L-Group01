@@ -42,7 +42,7 @@ def sign_in_organization():
         name = input("Enter name: ")
         password = input("Enter password: ")
 
-        db.cursor.execute("SELECT * FROM MEMBER WHERE name='{x}' AND password='{y}'".format(x=name, y=password))
+        db.cursor.execute("SELECT * FROM ORGANIZATION WHERE name='{x}' AND password='{y}'".format(x=name, y=password))
         row = db.cursor.fetchone()
         if row == None:
             print("-" * 10)
