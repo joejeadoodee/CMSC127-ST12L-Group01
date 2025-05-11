@@ -67,7 +67,7 @@ python3 -m venv myenv
 sudo mariadb
 
 USE org
-# Paste milestone3.sql in the command line to populate database
+# Paste org.sql in the command line to populate database
 GRANT ALL PRIVILEGES ON org.* TO 'jojolanot'@'%';
 ```
 
