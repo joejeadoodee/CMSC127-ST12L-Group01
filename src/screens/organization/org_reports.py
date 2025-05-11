@@ -73,8 +73,8 @@ def late_payments():
     input("Press Enter to return...")
 
 @screen
-def member_status_analytics():
-    print("MEMBER STATUS ANALYTICS")
+def member_status():
+    print("MEMBER STATUS")
     # insert code here
     input("Press Enter to return...")
 
