@@ -8,7 +8,7 @@ def to_home(user_type):
         member_home.home()
     if user_type == 'admin':
         admin_home.home()
-    if user_type == 'organzation':
+    if user_type == 'organization':
         organization_home.home()
 
 def to_welcome():

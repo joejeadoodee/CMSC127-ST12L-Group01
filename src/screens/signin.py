@@ -55,7 +55,7 @@ def sign_in_organization():
 
         organization.member_id = row[0]
         organization.name = row[1]
-        organization.number_of_members = row[4]
+        organization.number_of_members = row[3]
         break
 
     print("-" * 10)
