@@ -1,4 +1,5 @@
 from src.decorators import screen
+from src import navigate
    
 @screen
 def sign_up():
@@ -14,3 +15,4 @@ def sign_up():
     print("SIGNED UP!")
     print("-" * 10)
     print("REDIRECTING TO HOME SCREEN...")
+    return navigate.to_welcome()
