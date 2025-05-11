@@ -31,6 +31,7 @@ CREATE TABLE MEMBER_DEGREE_PROGRAM(
 CREATE TABLE ORGANIZATION (
     organization_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     number_of_members INT NOT NULL,
     PRIMARY KEY (organization_id)
 );
@@ -83,17 +84,17 @@ VALUES(2, 'jpmonreal', 'Jomar Monreal', '123456789', 2023, 'Active', 'M', FALSE)
 INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin)
 VALUES(3, 'blanot', 'Brian Lanot', '123456789', 2023, 'Active', 'M', FALSE); 
 INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin)
-VALUES(4, 'ttralala', 'Tralero Tralala', '123456789', 2023, 'Active', 'M', FALSE); 
+VALUES(4, 'ttralala', 'Tralero Tralala', '123456789', 2023, 'Active', 'M', TRUE); 
 
 -- ADD: member's degree program
 INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
 VALUES(1, 'jalonzo', 'BSCS');
 
 -- ADD: organization
-INSERT INTO ORGANIZATION(organization_id, name, number_of_members)
-VALUES(1, 'UPLB GDS', 39); 
-INSERT INTO ORGANIZATION(organization_id, name, number_of_members)
-VALUES(2, 'YCSS', 21); 
+INSERT INTO ORGANIZATION(organization_id, name, password, number_of_members)
+VALUES(1, 'UPLB GDS', '123456789', 39); 
+INSERT INTO ORGANIZATION(organization_id, name, password, number_of_members)
+VALUES(2, 'YCSS', '123456789', 21); 
 
 -- ADD: financial obligation
 INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
