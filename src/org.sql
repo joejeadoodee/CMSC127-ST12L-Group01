@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS MEMBER;
 
 -- create: MEMBER table
 CREATE TABLE MEMBER(
-    member_id INT NOT NULL,
+    member_id INT AUTO_INCREMENT  NOT NULL,
     username VARCHAR(50) NOT NULL,
     name VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE MEMBER(
 
 -- create: MEMBER_DEGREE_PROGRAM table
 CREATE TABLE MEMBER_DEGREE_PROGRAM(
-    member_id INT NOT NULL,
+    member_id INT AUTO_INCREMENT NOT NULL,
     username VARCHAR(50) NOT NULL,
     degree_program VARCHAR(100) NOT NULL,
     PRIMARY KEY(member_id, username, degree_program),
@@ -29,7 +29,7 @@ CREATE TABLE MEMBER_DEGREE_PROGRAM(
 
 -- create: ORGANIZATION table
 CREATE TABLE ORGANIZATION (
-    organization_id INT NOT NULL,
+    organization_id INT AUTO_INCREMENT NOT NULL,
     name VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
     number_of_members INT NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE ORGANIZATION (
 
 -- create: FINANCIAL_OBLIGATION table 
 CREATE TABLE FINANCIAL_OBLIGATION(
-    record_id INT NOT NULL,
+    record_id INT AUTO_INCREMENT NOT NULL,
     semester VARCHAR(50) NOT NULL,
     academic_year INT NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE FINANCIAL_OBLIGATION(
 
 -- create: PAYMENT table
 CREATE TABLE PAYMENT(
-    payment_id INT NOT NULL,
+    payment_id INT AUTO_INCREMENT NOT NULL,
     amount_paid DECIMAL(10,2) DEFAULT 0.00 NOT NULL,
     payment_date DATE NOT NULL,
     record_id INT NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE PAYMENT(
 
 -- create: SERVES table
 CREATE TABLE SERVES (
-    member_id INT NOT NULL,
+    member_id INT AUTO_INCREMENT NOT NULL,
     username VARCHAR(50) NOT NULL,
     organization_id INT NOT NULL,
     role VARCHAR(100) NOT NULL,
