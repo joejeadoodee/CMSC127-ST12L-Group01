@@ -74,22 +74,17 @@ GRANT ALL PRIVILEGES ON org.* TO 'jojolanot'@'%';
 
 
 ## How to Run
-1. Run virtual environment
+1. Run virtual environment and main file
 ```bash
-source myenv/bin/activate
-pip install -r requirements.txt
-```
-2. Run main.py
-```bash
-python3 main.py
+make run
 ```
 
-3. For signing in as member, try:
+2. For signing in as member, try:
 ```
 name: jalonzo
 password: 1234
 ```
-4. For signing in as an org, try:
+3. For signing in as an org, try:
 ```
 name: YCSS
 password: 1234

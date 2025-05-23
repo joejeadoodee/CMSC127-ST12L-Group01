@@ -1,2 +1,3 @@
 mariadb==1.1.12
 packaging==25.0
+tk==0.1.0
