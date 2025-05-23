@@ -6,13 +6,15 @@ import src.mariadb_connector as db
 from src.screens.signup import sign_up_member, sign_up_org
 from src.screens.signin import sign_in_member, sign_in_organization
 import sys
+from src.utils import center_window
 
 @screen
 def welcome():
     # Create main window
     win = tk.Tk()
     win.title("Student Organization Management System")
-    win.geometry("600x400")
+    win.geometry("400x400")
+    center_window(win, 400, 400)
 
     # Define fonts
     heading_font = font.Font(family='Georgia', size=18, weight='bold')
@@ -47,11 +49,6 @@ def welcome():
         win.destroy()
         sys.exit()
 
-    def test_query():
-        db.cursor.execute("SELECT * FROM MEMBER")
-        row = db.cursor.fetchall()
-        print(row)
-
     # Buttons
     buttons = [
         ("Log in as Organization", login_organization),
@@ -59,8 +56,6 @@ def welcome():
         ("Sign up as Organization", signup_organization),
         ("Sign up as Member", signup_member),
         ("Exit", exit_app),
-        # Optional: Add a test button (can be removed in production)
-        ("Run DB Test", test_query)
     ]
 
     for text, command in buttons:
