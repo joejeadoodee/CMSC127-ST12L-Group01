@@ -67,8 +67,9 @@ python3 -m venv myenv
 sudo mariadb
 
 USE org
-# Paste org.sql in the command line to populate database
+CREATE USER jojolanot IDENTIFIED BY 'jojolanot';
 GRANT ALL PRIVILEGES ON org.* TO 'jojolanot'@'%';
+# Paste org.sql in the command line to populate database
 ```
 
 
@@ -81,4 +82,15 @@ pip install -r requirements.txt
 2. Run main.py
 ```bash
 python3 main.py
+```
+
+3. For signing in as member, try:
+```
+name: jalonzo
+password: 1234
+```
+4. For signing in as an org, try:
+```
+name: YCSS
+password: 1234
 ```
