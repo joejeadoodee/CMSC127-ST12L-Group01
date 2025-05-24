@@ -59,6 +59,7 @@ sudo ./mariadb_repo_setup
 sudo apt install libmariadb3 libmariadb-dev
 
 sudo apt install python3.12-venv
+sudo apt-get install python3-tk
 python3 -m venv myenv
 ``` 
 
