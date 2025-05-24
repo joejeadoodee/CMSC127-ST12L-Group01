@@ -1,3 +1,4 @@
+import datetime
 from src.decorators import screen
 import src.mariadb_connector as db
 from src import member, navigate
@@ -90,7 +91,83 @@ def view_all_dues():
 @screen
 def pay_due():
     print("PAY DUE")
-    # insert code here
+    member_id = member.member_id
+
+    db.cursor.execute(f"""
+        SELECT osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_name, osmfp.academic_year, osmfp.semester,
+               COALESCE(SUM(osmfp.amount_paid), 0) as total_amount_paid, osmfp.total_due
+        FROM (
+            SELECT *
+            FROM (
+                SELECT *
+                FROM (
+                    SELECT DISTINCT organization_id as org_id, name as org_name, member_id as mem_id, full_name
+                    FROM (
+                        SELECT *
+                        FROM (SELECT * FROM ORGANIZATION) o
+                        LEFT JOIN (SELECT organization_id as org_id, member_id as mem_id FROM SERVES) s
+                        ON o.organization_id = s.org_id
+                    ) os
+                    LEFT JOIN (SELECT member_id, username, name as full_name, password, batch, status, gender, is_admin FROM MEMBER) m
+                    ON os.mem_id = m.member_id
+                ) osm
+                LEFT JOIN (SELECT * FROM FINANCIAL_OBLIGATION) fp
+                ON osm.org_id = fp.organization_id
+            ) r
+            LEFT JOIN (SELECT payment_id, amount_paid, payment_date, record_id as p_record_id, member_id FROM PAYMENT) p
+            ON p.member_id = r.mem_id AND p.record_id = r.record_id
+        ) osmfp
+        WHERE osmfp.mem_id = {member_id}
+        GROUP BY osmfp.record_id
+        HAVING total_amount_paid < total_due;
+    """)
+    
+    dues = db.cursor.fetchall()
+
+    if not dues:
+        print("You have no outstanding dues!")
+        return
+
+    headers = ["Index", "Organization", "Obligation", "Academic Year", "Semester", "Amount Paid", "Total Due"]
+    table_data = []
+
+    for idx, row in enumerate(dues):
+        record_id, obligation_name, org_name, academic_year, semester, total_paid, total_due = row
+        table_data.append([idx + 1, org_name, obligation_name, academic_year, semester, total_paid, total_due])
+
+    print(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+
+    choice = input("Enter the index of the obligation you want to pay (0 to cancel): ")
+    if not choice.isdigit() or int(choice) < 0 or int(choice) > len(dues):
+        print("Invalid choice.")
+        return
+    
+    if int(choice) == 0:
+        return
+
+    selected_due = dues[int(choice) - 1]
+    record_id = selected_due[0]
+
+    amount = input("Enter amount to pay: ")
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            print("Amount must be greater than 0.")
+            return
+    except ValueError:
+        print("Invalid amount.")
+        return
+
+    now = datetime.now().strftime('%Y-%m-%d')
+
+    db.cursor.execute("""
+        INSERT INTO PAYMENT (amount_paid, payment_date, record_id, member_id)
+        VALUES (%s, %s, %s, %s)
+    """, (amount, now, record_id, member_id))
+    db.conn.commit()
+    print("Payment successful!")
+   
+
 
 @screen
 def view_payment_history():
