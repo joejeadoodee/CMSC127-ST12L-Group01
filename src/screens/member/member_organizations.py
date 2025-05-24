@@ -26,7 +26,7 @@ def view_organizations():
         ORDER BY S.school_year DESC, S.semester DESC;
         """
         db.cursor.execute(query, (member_id, username))
-        results = db.fetchall()
+        results = db.cursor.fetchall()
 
         if not results:
             print("You are not currently part of any organizations.")
