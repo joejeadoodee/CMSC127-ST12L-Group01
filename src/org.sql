@@ -85,6 +85,8 @@ INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, i
 VALUES(3, 'blanot', 'Brian Lanot', '1234', 2023, 'Active', 'M', FALSE); 
 INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin)
 VALUES(4, 'ttralala', 'Tralero Tralala', '1234', 2023, 'Active', 'M', TRUE); 
+INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin)
+VALUES(5, 'aalde', 'Aaron Alde', '1234', 2024, 'Active', 'M', TRUE); 
 
 -- ADD: member's degree program
 INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
@@ -95,12 +97,16 @@ INSERT INTO ORGANIZATION(organization_id, name, password, number_of_members)
 VALUES(1, 'UPLB GDS', '1234', 39); 
 INSERT INTO ORGANIZATION(organization_id, name, password, number_of_members)
 VALUES(2, 'YCSS', '1234', 21); 
+INSERT INTO ORGANIZATION(organization_id, name, password, number_of_members)
+VALUES(3, 'BAKA', '1234', 25); 
 
 -- ADD: financial obligation
 INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
 VALUES(1, '1st semester', 2025, 'Membership Fee', 500, '2025-06-15', 1); 
 INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
 VALUES(2, '1st semester', 2025, 'FRA Fee', 1000, '2025-10-15', 2); 
+INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
+VALUES(3, '1st semester', 2025, 'Orientatio Fee', 1000, '2025-10-15', 2); 
 
 -- ADD: payment
 INSERT INTO PAYMENT(payment_id, amount_paid, payment_date, record_id, member_id, username)
@@ -262,8 +268,7 @@ FROM (
     ) p
     ON p.member_id = r.mem_id
 ) osmfp 
-GROUP BY member_id, record_id, organization_id 
-HAVING total_amount_paid < total_due and org_id = 1 and academic_year = 2025 and semester = '1st semester' ;
+GROUP BY member_id, record_id, organization_id;
 
 --View a member’s unpaid membership fees or dues for all their organizations (Member’s POV).
 SELECT osmfp.mem_id as 'member_id', osmfp.full_name, osmfp.record_id, osmfp.name as 'obligation_name', osmfp.org_id as 'organization_id', osmfp.org_name, osmfp.academic_year, osmfp.semester, COALESCE(SUM(osmfp.amount_paid),0)  total_amount_paid, osmfp.total_due 
@@ -431,3 +436,27 @@ WHERE
     AND s.school_year <= YEAR('2025-04-29') -- replace with the given date
 ORDER BY 
     m.name;
+
+
+-- View amount paid
+SELECT m.member_id, m.username, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
+CASE WHEN p.total_amount_paid is NULL AND f.record_id is NOT NULL THEN 0 ELSE f.total_due END AS `total_amount_paid`
+FROM MEMBER m
+JOIN ORGANIZATION o
+LEFT JOIN FINANCIAL_OBLIGATION f
+ON o.organization_id=f.organization_id
+LEFT JOIN (
+    SELECT record_id, member_id, SUM(amount_paid) `total_amount_paid`
+    FROM PAYMENT p
+    GROUP BY record_id, member_id
+) p
+ON f.record_id=p.record_id AND m.member_id=p.member_id
+ORDER BY m.member_id, o.name, f.name
+
+--View payment history
+SELECT p.payment_id, o.name, f.name, p.amount_paid, p.payment_date, 
+FROM PAYMENT p 
+LEFT JOIN FINANCIAL_OBLIGATION f
+ON f.record_id=p.record_id
+LEFT JOIN ORGANIZATION o
+ON f.organization_id=o.organization_id;

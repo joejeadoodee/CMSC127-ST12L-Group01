@@ -8,7 +8,7 @@ def home():
     while True:
         print("WELCOME, {x}".format(x=member.name))
         print("[1] View My Profile")
-        print("[2] View My Dues")
+        print("[2] View My Financial Obligations")
         print("[3] View My Organizations")
         print("[4] Logout")
 
