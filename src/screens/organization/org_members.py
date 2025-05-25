@@ -35,14 +35,21 @@ def add_member():
     print("ADD MEMBER")
     name = input("Enter full name: ")
     student_id = input("Enter student ID: ")
-    # insert code here
+    
+    if not name or not student_id:
+        print("Invalid input. Name and student ID are required.")
+    else:
+        if db.add_member(name, student_id):
+            print("Member added successfully.")
+        else:
+            print("Failed to add member.")
     input("Press Enter to return...")
 
 @screen
 def update_member():
     print("UPDATE MEMBER")
     member_id = input("Enter Member ID to update: ")
-    # insert code here
+    
     input("Press Enter to return...")
 
 @screen
