@@ -112,6 +112,7 @@ def sign_up_org():
                 VALUES ('{org_name}', '{password}', 0)
             """
             db.cursor.execute(insert_query)
+            db.conn.commit()
             messagebox.showinfo("Success", "Signed up successfully!")
             win.destroy()
             navigate.to_welcome()
