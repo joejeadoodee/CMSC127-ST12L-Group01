@@ -25,7 +25,6 @@ def manage_members():
             search_members()
         elif user_input == '5':
             delete_member()
-
         elif user_input == '0':
             return navigate.to_home('organization')
         else:
@@ -35,13 +34,22 @@ def manage_members():
 def add_member():
     print("ADD MEMBER")
     name = input("Enter full name: ")
-    student_id = input("Enter student ID: ")
-    
-    if not name or not student_id:
-        print("Invalid input. Name and student ID are required.")
+    username = input("Enter username: ")
+    role = input("Enter role (President/Member/Others): ")
+    semester = input("Enter semester: ")
+    school_year = input("Enter school year: ")
+
+    if not all([name, username, role]):
+        print("Invalid input. All fields are required.")
     else:
-        if db.add_member(name, student_id):
-            print("Member added successfully.")
+        if db.add_member(name, username):
+            member_id = db.get_member_id(username)
+            if member_id:
+                db.cursor.execute("INSERT INTO SERVES (member_id, username, organization_id, role, school_year, semester) VALUES (?, ?, ?, ?, ?, ?)", (member_id, username, organization.organization_id, role, school_year, semester))
+                db.conn.commit()
+                print("Member and role added successfully.")
+            else:
+                print("Failed to retrieve member ID.")
         else:
             print("Failed to add member.")
     input("Press Enter to return...")
