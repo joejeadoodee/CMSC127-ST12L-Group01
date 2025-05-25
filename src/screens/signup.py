@@ -23,6 +23,7 @@ def sign_up_member():
     def submit():
         name = name_entry.get()
         username = username_entry.get()
+        degprog = degprog_entry.get()
         batch = batch_entry.get()
         gender = gender_entry.get()
         password = password_entry.get()
@@ -35,9 +36,16 @@ def sign_up_member():
         try:
             insert_query = f"""
                 INSERT INTO MEMBER (username, name, password, batch, status, gender, is_admin)
-                VALUES ('{username}', '{name}', '{password}', {int(batch)}, 'Active', '{gender}', FALSE)
+                VALUES ( '{username}', '{name}', '{password}', {int(batch)}, 'Active', '{gender}', FALSE)
             """
             db.cursor.execute(insert_query)
+            insert_query = f"""
+                INSERT INTO MEMBER_DEGREE_PROGRAM(username, degree_program)
+                VALUES('{username}', '{degprog}');
+            """
+            db.cursor.execute(insert_query)
+            db.conn.commit()
+            
             messagebox.showinfo("Success", "Signed up successfully!")
             win.destroy()
             navigate.to_welcome()
@@ -49,6 +57,7 @@ def sign_up_member():
     fields = [
         ("Full Name", "name_entry"),
         ("Username", "username_entry"),
+        ("Degree Program", "degprog_entry"),
         ("Batch Year", "batch_entry"),
         ("Gender", "gender_entry"),
         ("Password", "password_entry"),
@@ -64,6 +73,7 @@ def sign_up_member():
 
     name_entry = entries["name_entry"]
     username_entry = entries["username_entry"]
+    degprog_entry = entries["degprog_entry"]
     batch_entry = entries["batch_entry"]
     gender_entry = entries["gender_entry"]
     password_entry = entries["password_entry"]
