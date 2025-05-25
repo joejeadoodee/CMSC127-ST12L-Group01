@@ -37,6 +37,7 @@ def add_member():
     role = input("Enter role (President/Member/Others): ")
     semester = input("Enter semester: ")
     school_year = input("Enter school year: ")
+    committee = input("Enter comittee: ")
 
     if not all([member_id, role, semester, school_year]):
         print("Invalid input. All fields are required.")
@@ -48,8 +49,8 @@ def add_member():
             if result:
                 username = result[0]
                 db.cursor.execute(
-                    "INSERT INTO SERVES (member_id, username, organization_id, role, school_year, semester) VALUES (?, ?, ?, ?, ?, ?)", 
-                    (member_id, username, organization.organization_id, role, school_year, semester))
+                    "INSERT INTO SERVES (member_id, username, organization_id, role, school_year, committee, semester) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                    (member_id, username, organization.organization_id, role, school_year, committee, semester))
                 db.conn.commit()
 
                 print("Member role added successfully.")
