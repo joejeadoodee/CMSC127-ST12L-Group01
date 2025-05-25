@@ -1,3 +1,4 @@
+from tabulate import tabulate
 from src.decorators import screen
 import src.mariadb_connector as db
 from src import organization, navigate
@@ -6,25 +7,25 @@ from src import organization, navigate
 def manage_members():
     while True:
         print("MANAGE MEMBERS")
-        print("[1] Add Member")
-        print("[2] Update Member")
-        print("[3] Delete Member")
+        print("[1] View All Members")
+        print("[2] Add Member")
+        print("[3] Update Member Role/Status")
         print("[4] Search Members")
-        print("[5] Update Member Role/Status")
+        print("[5] Delete Member")
         print("[0] Back")
 
         user_input = input("Enter option: ")
-
         if user_input == '1':
-            add_member()
+            view_members()
         elif user_input == '2':
-            update_member()
+            add_member()
         elif user_input == '3':
-            delete_member()
+            update_member_role_status()
         elif user_input == '4':
             search_members()
         elif user_input == '5':
-            update_member_role_status()
+            delete_member()
+
         elif user_input == '0':
             return navigate.to_home('organization')
         else:
@@ -45,18 +46,6 @@ def add_member():
             print("Failed to add member.")
     input("Press Enter to return...")
 
-@screen
-def update_member():
-    print("UPDATE MEMBER")
-    member_id = input("Enter Member ID to update: ")
-    name = input("Enter new name (leave blank to keep current): ")
-    student_id = input("Enter new student ID (leave blank to keep current): ")
-
-    if db.update_member(member_id, name=name or None, student_id=student_id or None):
-        print("Member updated successfully.")
-    else:
-        print("Member update failed.")
-    input("Press Enter to return...")
 
 @screen
 def delete_member():
@@ -130,3 +119,39 @@ def update_member_role_status():
     except Exception as e:
         print("Error while updating member role/status: ", e)
     input("Press Enter to return...")
+
+@screen
+def view_members():
+    organization_id = organization.organization_id
+    query = f"""
+       SELECT 
+        m.member_id,
+        m.username,
+        m.name,
+        m.status,
+        m.gender,
+        md.degree_program,
+        m.batch,
+        s.role,
+        s.committee
+        FROM 
+            SERVES s
+        LEFT JOIN 
+            MEMBER m
+        ON m.member_id = s.member_id
+        LEFT JOIN
+            MEMBER_DEGREE_PROGRAM md
+        ON m.member_id = md.member_id
+        WHERE 
+            s.organization_id = {organization_id}
+    """
+
+    db.cursor.execute(query)
+
+    rows = db.cursor.fetchall()
+
+    headers = ["Member id", "Username", "Full Name", "Status", "Gender", "Degree Program", "Batch", "Role", "Committee"]        
+
+    table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
+    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
+    print(indented_table)

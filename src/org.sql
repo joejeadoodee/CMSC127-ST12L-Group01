@@ -91,6 +91,14 @@ VALUES(5, 'aalde', 'Aaron Alde', '1234', 2024, 'Active', 'M', TRUE);
 -- ADD: member's degree program
 INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
 VALUES(1, 'jalonzo', 'BSCS');
+INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
+VALUES(2, 'jpmonreal', 'BSCS');
+INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
+VALUES(3, 'blanot', 'BSCS');
+INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
+VALUES(4, 'ttralala', 'BSA');
+INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
+VALUES(5, 'aalde', 'BSA');
 
 -- ADD: organization
 INSERT INTO ORGANIZATION(organization_id, name, password, number_of_members)
@@ -221,24 +229,26 @@ ORDER BY
   FIELD(semester, '1st semester', '2nd semester', 'Mid semester') DESC;
 
 --View all members of the organization by role, status, gender, degree program, batch (year of membership), and committee. (Note: we assume one committee membership only per organization per semester)
-SELECT 
-    m.member_id,
-    m.username,
-    m.name,
-    m.status,
-    m.gender,
-    md.degree_program,
-    m.batch,
-    s.role,
-    s.committee
-FROM 
-    MEMBER m
-JOIN 
-    MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id AND m.username = md.username
-JOIN 
-    SERVES s ON m.member_id = s.member_id AND m.username = s.username
-WHERE 
-    s.organization_id = 1; -- Replace with the actual organization_id
+    SELECT 
+        m.member_id,
+        m.username,
+        m.name,
+        m.status,
+        m.gender,
+        md.degree_program,
+        m.batch,
+        s.role,
+        s.committee
+    FROM 
+        SERVES s
+    LEFT JOIN 
+        MEMBER m
+    ON m.member_id = s.member_id
+    LEFT JOIN
+        MEMBER_DEGREE_PROGRAM md
+    ON m.member_id = md.member_id
+    WHERE 
+        s.organization_id = 1; -- Replace with the actual organization_id
 
 
 -- View members for a given organization with unpaid membership fees or dues for a given semester and academic year

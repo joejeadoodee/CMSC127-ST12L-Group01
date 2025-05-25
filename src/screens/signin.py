@@ -40,7 +40,7 @@ def sign_in_organization():
         if row is None:
             messagebox.showerror("Login Failed", "Invalid credentials.")
         else:
-            organization.member_id = row[0]
+            organization.organization_id = row[0]
             organization.name = row[1]
             organization.number_of_members = row[3]
             win.destroy()
