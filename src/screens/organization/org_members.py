@@ -157,6 +157,8 @@ def view_members():
         ON m.member_id = md.member_id
         WHERE 
             s.organization_id = {organization_id}
+        GROUP BY
+            s.member_id
     """
 
     db.cursor.execute(query)

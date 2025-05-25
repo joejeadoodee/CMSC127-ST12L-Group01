@@ -68,6 +68,8 @@ def member_overview():
         ON m.member_id = md.member_id
         WHERE 
             s.organization_id = {organization_id}
+        GROUP BY 
+            m.member_id
     """
 
     db.cursor.execute(query)
@@ -258,24 +260,227 @@ def late_payments():
 
 @screen
 def member_status_analytics():
-    print("MEMBER STATUS")
-    # insert code here
+    print("MEMBER STATUS ANALYTICS")
+    
+    try:
+        n = int(input("Enter how many recent semesters to analyze (e.g., 5): "))
+        if n == 1:
+            n =2
+    except ValueError:
+        print("Invalid input. Please enter a number.")
+        input("Press Enter to return...")
+        return
+
+    organization_id = organization.organization_id
+    year_threshold_query = f"(YEAR(CURDATE()) - FLOOR({n} / 2))"
+
+    query = f"""
+        SELECT 
+            s.organization_id,
+            SUM(CASE WHEN m.status = 'Active' THEN 1 ELSE 0 END) AS active_members,
+            SUM(CASE WHEN m.status = 'Inactive' OR m.status = 'Graduated' THEN 1 ELSE 0 END) AS inactive_members,
+            COUNT(*) AS total_members,
+            ROUND((SUM(CASE WHEN m.status = 'Active' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS active_percentage,
+            ROUND((SUM(CASE WHEN m.status = 'Inactive' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS inactive_percentage
+        FROM 
+            MEMBER m
+        JOIN 
+            SERVES s ON m.member_id = s.member_id AND m.username = s.username
+        WHERE 
+            s.organization_id = {organization_id}
+            AND CAST(LEFT(s.school_year, 4) AS UNSIGNED) >= {year_threshold_query}
+            AND s.semester IN ('1st semester', '2nd semester', 'Mid semester')
+        GROUP BY 
+            s.organization_id;
+    """
+
+    db.cursor.execute(query)
+    rows = db.cursor.fetchall()
+
+    headers = [
+        "Org ID", 
+        "Active", 
+        "Inactive", 
+        "Total", 
+        "Active %", 
+        "Inactive %"
+    ]
+
+    if not rows:
+        print("No data found for the given criteria.")
+    else:
+        table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
+        indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
+        print(indented_table)
+
     input("Press Enter to return...")
+
 
 @screen
 def alumni_report():
     print("ALUMNI REPORT")
-    # insert code here
+    
+    organization_id = organization.organization_id
+
+    # Ask the user for a graduation year
+    input_year = input("Enter graduation year (YYYY): ").strip()
+
+    if not input_year.isdigit() or len(input_year) != 4:
+        print("Invalid year entered. Aborting.")
+        input("Press Enter to return...")
+        return
+
+    query = f"""
+        SELECT 
+            m.member_id,
+            m.username,
+            m.name,
+            m.status,
+            m.gender,
+            md.degree_program,
+            m.batch,
+            s.role,
+            s.committee
+        FROM 
+            SERVES s
+        LEFT JOIN 
+            MEMBER m ON m.member_id = s.member_id
+        LEFT JOIN
+            MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id
+        WHERE 
+            s.organization_id = {organization_id}
+            AND m.graduation_date IS NOT NULL
+            AND YEAR(m.graduation_date) = {input_year}
+        GROUP BY 
+            m.member_id
+    """
+
+    db.cursor.execute(query)
+    rows = db.cursor.fetchall()
+
+    headers = [
+        "Member ID", "Username", "Full Name", "Status", "Gender",
+        "Degree Program", "Batch", "Role", "Committee"
+    ]
+
+    table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
+    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
+    print(indented_table)
     input("Press Enter to return...")
+
+
 
 @screen
 def financial_summary():
     print("FINANCIAL SUMMARY")
-    # insert code here
-    input("Press Enter to return...")
+    
+    organization_id = organization.organization_id  # Assuming this is available globally
+    
+    try:
+        input_year = int(input("Enter cutoff year (YYYY): ").strip())
+    except ValueError:
+        print("Invalid year entered. Aborting.")
+        input("Press Enter to return...")
+        return
+
+    query = f"""
+        SELECT 
+            SUM(sub.total_amount_paid) AS total_paid,
+            SUM(sub.total_due - sub.total_amount_paid) AS total_unpaid
+        FROM (
+            SELECT 
+                s.member_id, 
+                m.username, 
+                o.name AS organization_name, 
+                f.record_id, 
+                f.name AS obligation_name, 
+                f.semester, 
+                f.academic_year, 
+                f.total_due, 
+                f.due_date, 
+                COALESCE(p.total_amount_paid, 0) AS total_amount_paid
+            FROM SERVES s
+            LEFT JOIN MEMBER m ON s.member_id = m.member_id
+            LEFT JOIN ORGANIZATION o ON o.organization_id = s.organization_id
+            LEFT JOIN FINANCIAL_OBLIGATION f ON o.organization_id = f.organization_id
+            LEFT JOIN (
+                SELECT record_id, member_id, SUM(amount_paid) AS total_amount_paid
+                FROM PAYMENT
+                GROUP BY record_id, member_id
+            ) p ON f.record_id = p.record_id AND s.member_id = p.member_id
+            WHERE f.record_id IS NOT NULL
+              AND o.organization_id = {organization_id}
+              AND YEAR(f.due_date) = {input_year}
+        ) AS sub;
+    """
+
+    db.cursor.execute(query)
+    result = db.cursor.fetchone()
+
+    if result:
+        print(f"\nAs of the end of {input_year}:")
+        total_paid = result[0] if result[0] is not None else 0.0
+        total_unpaid = result[1] if result[1] is not None else 0.0
+
+        print(f"\n      Total Paid:   ₱ {total_paid:,.2f}")
+        print(f"      Total Unpaid: ₱ {total_unpaid:,.2f}\n")
+    else:
+        print("No financial data found.")
+
+    input("\nPress Enter to return...")
+
 
 @screen
 def member_with_highest_debt():
-    print("MEMBER WITH HIGHEST DEBT")
-    # insert code here
-    input("Press Enter to return...")
+    print("MEMBER(S) WITH HIGHEST DEBT")
+
+    organization_id = organization.organization_id
+    semester = input("Enter semester (1st semester/2nd semester/ Mid semester): ").strip()
+    academic_year = input("Enter academic year (e.g., 2025): ").strip()
+
+    query = f"""
+        WITH member_debts AS (
+            SELECT 
+                s.member_id,
+                m.username,
+                SUM(f.total_due - COALESCE(p.total_amount_paid, 0)) AS total_unpaid
+            FROM SERVES s
+            LEFT JOIN MEMBER m ON s.member_id = m.member_id
+            LEFT JOIN ORGANIZATION o ON o.organization_id = s.organization_id
+            LEFT JOIN FINANCIAL_OBLIGATION f ON o.organization_id = f.organization_id
+            LEFT JOIN (
+                SELECT record_id, member_id, SUM(amount_paid) AS total_amount_paid
+                FROM PAYMENT
+                GROUP BY record_id, member_id
+            ) p ON f.record_id = p.record_id AND s.member_id = p.member_id
+            WHERE 
+                f.record_id IS NOT NULL
+                AND o.organization_id = {organization_id}
+                AND f.semester = '{semester}'
+                AND f.academic_year = '{academic_year}'
+            GROUP BY s.member_id, m.username
+        ),
+        max_debt AS (
+            SELECT MAX(total_unpaid) AS highest_debt FROM member_debts
+        )
+        SELECT 
+            d.username, 
+            d.total_unpaid
+        FROM member_debts d
+        JOIN max_debt m ON d.total_unpaid = m.highest_debt
+        WHERE d.total_unpaid > 0;
+    """
+
+    db.cursor.execute(query)
+    rows = db.cursor.fetchall()
+
+    if not rows:
+        print("\n      No members have unpaid obligations for that semester and academic year.")
+    else:
+        headers = ["Username", "Total Unpaid (₱)"]
+        table_str = tabulate(rows, headers=headers, floatfmt=".2f", tablefmt="fancy_grid")
+        indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
+        print(indented_table)
+
+    input("\nPress Enter to return...")
+

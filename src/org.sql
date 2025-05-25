@@ -15,6 +15,7 @@ CREATE TABLE MEMBER(
     status VARCHAR(50) NOT NULL,
     gender CHAR(1),
     is_admin BOOLEAN DEFAULT FALSE,
+    graduation_date DATE,
     PRIMARY KEY(member_id, username)
 );
 
@@ -84,9 +85,9 @@ VALUES(2, 'jpmonreal', 'Jomar Monreal', '1234', 2023, 'Active', 'M', FALSE);
 INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin)
 VALUES(3, 'blanot', 'Brian Lanot', '1234', 2023, 'Active', 'M', FALSE); 
 INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin)
-VALUES(4, 'ttralala', 'Tralero Tralala', '1234', 2023, 'Active', 'M', TRUE); 
-INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin)
-VALUES(5, 'aalde', 'Aaron Alde', '1234', 2024, 'Active', 'M', TRUE); 
+VALUES(4, 'ttralala', 'Tralero Tralala', '1234', 2023, 'Inactive', 'M', TRUE); 
+INSERT INTO MEMBER(member_id, username, name, password, batch, status, gender, is_admin, graduation_date)
+VALUES(5, 'aalde', 'Aaron Alde', '1234', 2024, 'Graduated', 'M', TRUE, '2025-12-15'); 
 
 -- ADD: member's degree program
 INSERT INTO MEMBER_DEGREE_PROGRAM(member_id, username, degree_program)
@@ -140,11 +141,9 @@ VALUES(2, 'jpmonreal', 3, 'Member', '2024-2025', 'Pub', '1st semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
 VALUES(3, 'blanot', 2, 'President', '2024-2025', 'Executive', '2nd semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
-VALUES(4, 'ttralala', 1, 'Member', '2022-2023', 'RD', '2nd semester');
-INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
 VALUES(4, 'ttralala', 2, 'Member', '2022-2023', 'Pub', '2nd semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
-VALUES(4, 'ttralala', 2, 'President', '2022-2023', 'Pub', '2nd semester');
+VALUES(4, 'ttralala', 2, 'President', '2024-2025', 'Pub', '2nd semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
 VALUES(5, 'aalde', 2, 'Member', '2022-2023', 'Finance', '2nd semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
@@ -394,36 +393,27 @@ FROM (
 ) grouped
 GROUP BY organization_id;
 
--- View the percentage of active vs inactive members of a given organization for the last n semesters. (Note: n is a positive integer)
-SELECT 
-    ms.organization_id,
-    ms.school_year,
-    SUM(CASE WHEN ms.status = 'Active' THEN 1 ELSE 0 END) AS active_members,
-    SUM(CASE WHEN ms.status = 'Inactive' THEN 1 ELSE 0 END) AS inactive_members,
-    COUNT(*) AS total_members,
-    ROUND((SUM(CASE WHEN ms.status = 'Active' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS active_percentage,
-    ROUND((SUM(CASE WHEN ms.status = 'Inactive' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS inactive_percentage
+-- View the percentage of active vs inactive members of a given organization for the last n semesters
+-- Note: n = 5 (change as needed)
 
-FROM (
-    SELECT 
-        m.member_id,
-        m.username,
-        m.status,
-        s.organization_id,
-        s.school_year
-    FROM 
-        MEMBER m
-    JOIN 
-        SERVES s ON m.member_id = s.member_id AND m.username = s.username
-    WHERE 
-        s.organization_id = 1 -- Replace with desired org ID
-        AND (
-            s.school_year >= (YEAR(CURDATE()) - FLOOR(2 / 2)) -- Adjust to reflect n semesters (e.g. FLOOR(n/2))
-        )
-        AND s.semester IN ('1st semester', '2nd semester', 'Mid semester')
-    GROUP BY 
-        m.member_id, m.username, m.status
-) ms;
+SELECT 
+    s.organization_id,
+    SUM(CASE WHEN m.status = 'Active' THEN 1 ELSE 0 END) AS active_members,
+    SUM(CASE WHEN m.status = 'Inactive' OR m.status = 'Graduated' THEN 1 ELSE 0 END) AS inactive_members,
+    COUNT(*) AS total_members,
+    ROUND((SUM(CASE WHEN m.status = 'Active' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS active_percentage,
+    ROUND((SUM(CASE WHEN m.status = 'Inactive' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) AS inactive_percentage
+FROM 
+    MEMBER m
+JOIN 
+    SERVES s ON m.member_id = s.member_id AND m.username = s.username
+WHERE 
+    s.organization_id = 1 -- Replace with desired org ID
+    AND CAST(LEFT(s.school_year, 4) AS UNSIGNED) >= (YEAR(CURDATE()) - FLOOR(5 / 2)) -- Adjust based on n semesters
+    AND s.semester IN ('1st semester', '2nd semester', 'Mid semester')
+GROUP BY 
+    s.organization_id
+
 
 
 -- View all alumni members of a given organization as of a given date.
@@ -446,7 +436,7 @@ JOIN
 WHERE 
     s.organization_id = 1 -- replace with the actual organization_id
     AND m.status = 'alumni'
-    AND s.school_year <= YEAR('2025-04-29') -- replace with the given date
+    AND m.batch <= YEAR('2025-04-29') -- replace with the given date
 ORDER BY 
     m.name;
 
@@ -517,3 +507,33 @@ SELECT r.organization_id, r.name, r.username, r.unpaid_amount  FROM (
     ORDER BY s.member_id, o.name, f.name
 ) r
 ORDER BY r.name, `unpaid_amount` DESC;
+
+
+SELECT 
+    SUM(sub.total_amount_paid) AS total_paid,
+    SUM(sub.total_due - sub.total_amount_paid) AS total_unpaid
+FROM (
+    SELECT 
+        s.member_id, 
+        m.username, 
+        o.name AS organization_name, 
+        f.record_id, 
+        f.name AS obligation_name, 
+        f.semester, 
+        f.academic_year, 
+        f.total_due, 
+        f.due_date, 
+        COALESCE(p.total_amount_paid, 0) AS total_amount_paid
+    FROM SERVES s
+    LEFT JOIN MEMBER m ON s.member_id = m.member_id
+    LEFT JOIN ORGANIZATION o ON o.organization_id = s.organization_id
+    LEFT JOIN FINANCIAL_OBLIGATION f ON o.organization_id = f.organization_id
+    LEFT JOIN (
+        SELECT record_id, member_id, SUM(amount_paid) AS total_amount_paid
+        FROM PAYMENT
+        GROUP BY record_id, member_id
+    ) p ON f.record_id = p.record_id AND s.member_id = p.member_id
+    WHERE f.record_id IS NOT NULL
+      AND o.organization_id = 1                -- ← your target organization_id
+      AND f.due_date <= 2022-05-25                      -- ← your target cutoff date (e.g., '2025-05-25')
+) AS sub;
