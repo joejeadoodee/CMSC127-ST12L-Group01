@@ -67,10 +67,13 @@ def view_all_dues():
 
     db.cursor.execute(f"""
         SELECT * FROM (
-            SELECT m.member_id, m.username, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
-            CASE WHEN p.total_amount_paid is NULL AND f.record_id is NOT NULL THEN 0 ELSE f.total_due END AS `total_amount_paid`
-            FROM MEMBER m
-            JOIN ORGANIZATION o
+            SELECT s.member_id, m.username, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
+            COALESCE(p.total_amount_paid, 0) as `total_amount_paid`
+            FROM SERVES s
+            LEFT JOIN MEMBER m
+            ON s.member_id=m.member_id
+            LEFT JOIN ORGANIZATION o
+            ON o.organization_id=s.organization_id
             LEFT JOIN FINANCIAL_OBLIGATION f
             ON o.organization_id=f.organization_id
             LEFT JOIN (
@@ -78,9 +81,9 @@ def view_all_dues():
                 FROM PAYMENT p
                 GROUP BY record_id, member_id
             ) p
-            ON f.record_id=p.record_id AND m.member_id=p.member_id
-            WHERE m.member_id = {member_id}
-            ORDER BY m.member_id, o.name, f.name
+            ON f.record_id=p.record_id AND s.member_id=p.member_id
+            WHERE s.member_id = {member_id}
+            ORDER BY s.member_id, o.name, f.name
         ) result WHERE total_amount_paid < total_due;
     """)
     
