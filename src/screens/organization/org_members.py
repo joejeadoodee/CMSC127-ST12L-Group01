@@ -49,7 +49,13 @@ def add_member():
 def update_member():
     print("UPDATE MEMBER")
     member_id = input("Enter Member ID to update: ")
-    
+    name = input("Enter new name (leave blank to keep current): ")
+    student_id = input("Enter new student ID (leave blank to keep current): ")
+
+    if db.update_member(member_id, name=name or None, student_id=student_id or None):
+        print("Member updated successfully.")
+    else:
+        print("Member update failed.")
     input("Press Enter to return...")
 
 @screen
