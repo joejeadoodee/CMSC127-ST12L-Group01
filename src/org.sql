@@ -114,7 +114,7 @@ VALUES(1, '1st semester', 2025, 'Membership Fee', 500, '2025-06-15', 1);
 INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
 VALUES(2, '1st semester', 2025, 'FRA Fee', 1000, '2025-10-15', 2); 
 INSERT INTO FINANCIAL_OBLIGATION(record_id, semester, academic_year, name, total_due, due_date, organization_id)
-VALUES(3, '1st semester', 2025, 'Orientatio Fee', 1000, '2025-10-15', 2); 
+VALUES(3, '1st semester', 2025, 'Orientation Fee', 1000, '2025-10-15', 2); 
 
 -- ADD: payment
 INSERT INTO PAYMENT(payment_id, amount_paid, payment_date, record_id, member_id, username)
@@ -132,15 +132,23 @@ VALUES(6, 200.00, '2025-04-25', 2, 4, 'ttralala');
 
 -- ADD: member role (SERVES)
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
-VALUES(1, 'jalonzo', 1, 'Member', '2024-2025', 'Member', '2nd semester');
+VALUES(1, 'jalonzo', 1, 'Secretary', '2024-2025', 'Pub', '2nd semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
 VALUES(2, 'jpmonreal', 1, 'Member', '2024-2025', 'Member', '1st semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
+VALUES(2, 'jpmonreal', 3, 'Member', '2024-2025', 'Pub', '1st semester');
+INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
 VALUES(3, 'blanot', 2, 'President', '2024-2025', 'Executive', '2nd semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
-VALUES(4, 'ttralala', 1, 'Member', '2022-2023', 'Member', '2nd semester');
+VALUES(4, 'ttralala', 1, 'Member', '2022-2023', 'RD', '2nd semester');
 INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
-VALUES(4, 'ttralala', 2, 'Member', '2022-2023', 'Member', '2nd semester');
+VALUES(4, 'ttralala', 2, 'Member', '2022-2023', 'Pub', '2nd semester');
+INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
+VALUES(4, 'ttralala', 2, 'President', '2022-2023', 'Pub', '2nd semester');
+INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
+VALUES(5, 'aalde', 2, 'Member', '2022-2023', 'Finance', '2nd semester');
+INSERT INTO SERVES(member_id, username, organization_id, role, school_year, committee, semester)
+VALUES(5, 'aalde', 2, 'President', '2023-2024', 'Finance', '2nd semester');
 
 -- UPDATE: member's status
 UPDATE MEMBER
@@ -167,11 +175,6 @@ UPDATE ORGANIZATION
 SET number_of_members = 40
 WHERE organization_id = 1;
 
--- UPDATE: member's role in SERVES
-UPDATE SERVES
-SET role = 'Member', committee = 'Pub', semester = '2nd semester'
-WHERE member_id = 1 AND username = 'jalonzo' AND organization_id = 1;
-
 
 
 --SEARCH MEMBER
@@ -182,7 +185,7 @@ WHERE member_id = 1 OR username = 'jalonzo';
 SELECT ranked.member_id, ranked.username, ranked.role, ranked.committee, ranked.semester
 FROM (
     SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY school_year DESC, FIELD(semester, 'First semester', 'Second semester', 'Mid semester') DESC) AS rn
+           ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY school_year DESC, FIELD(semester, '1st semester', '2nd semester', 'Mid semester') DESC) AS rn
     FROM SERVES
 ) ranked
 WHERE rn = 1;
@@ -449,10 +452,13 @@ ORDER BY
 
 
 -- View amount paid
-SELECT m.member_id, m.username, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
-CASE WHEN p.total_amount_paid is NULL AND f.record_id is NOT NULL THEN 0 ELSE f.total_due END AS `total_amount_paid`
-FROM MEMBER m
-JOIN ORGANIZATION o
+SELECT s.member_id, m.username, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
+COALESCE(p.total_amount_paid, 0) as `total_amount_paid`
+FROM SERVES s
+LEFT JOIN MEMBER m
+ON s.member_id=m.member_id
+LEFT JOIN ORGANIZATION o
+ON o.organization_id=s.organization_id
 LEFT JOIN FINANCIAL_OBLIGATION f
 ON o.organization_id=f.organization_id
 LEFT JOIN (
@@ -460,13 +466,54 @@ LEFT JOIN (
     FROM PAYMENT p
     GROUP BY record_id, member_id
 ) p
-ON f.record_id=p.record_id AND m.member_id=p.member_id
-ORDER BY m.member_id, o.name, f.name
+ON f.record_id=p.record_id AND s.member_id=p.member_id
+WHERE f.record_id IS NOT NULL
+ORDER BY s.member_id, o.name, f.name;
+
 
 --View payment history
-SELECT p.payment_id, o.name, f.name, p.amount_paid, p.payment_date, 
+SELECT 
+    p.payment_id, 
+    o.name AS organization_name, 
+    f.name AS obligation_name, 
+    p.amount_paid, 
+    p.payment_date, 
+    p.member_id, 
+    f.due_date
 FROM PAYMENT p 
 LEFT JOIN FINANCIAL_OBLIGATION f
-ON f.record_id=p.record_id
+    ON f.record_id = p.record_id
 LEFT JOIN ORGANIZATION o
-ON f.organization_id=o.organization_id;
+    ON f.organization_id = o.organization_id
+WHERE 
+    p.payment_date > f.due_date
+ORDER BY 
+    p.member_id, 
+    o.name, 
+    f.name, 
+    p.payment_date DESC;
+
+
+
+--View members for a given organization with unpaid membership fees or dues for a given semester and academic year.
+SELECT r.organization_id, r.name, r.username, r.unpaid_amount  FROM (
+    SELECT s.member_id, m.username, o.organization_id, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
+    COALESCE(p.total_amount_paid, 0) as `total_amount_paid`,
+    (f.total_due - COALESCE(p.total_amount_paid, 0)) AS `unpaid_amount`
+    FROM SERVES s
+    LEFT JOIN MEMBER m
+    ON s.member_id=m.member_id
+    LEFT JOIN ORGANIZATION o
+    ON o.organization_id=s.organization_id
+    LEFT JOIN FINANCIAL_OBLIGATION f
+    ON o.organization_id=f.organization_id
+    LEFT JOIN (
+        SELECT record_id, member_id, SUM(amount_paid) `total_amount_paid`
+        FROM PAYMENT p
+        GROUP BY record_id, member_id
+    ) p
+    ON f.record_id=p.record_id AND s.member_id=p.member_id
+    WHERE f.record_id IS NOT NULL AND o.organization_id = 1 AND (f.total_due - COALESCE(p.total_amount_paid, 0)) > 0
+    ORDER BY s.member_id, o.name, f.name
+) r
+ORDER BY r.name, `unpaid_amount` DESC;
