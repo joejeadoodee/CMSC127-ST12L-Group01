@@ -62,7 +62,20 @@ def update_member():
 def delete_member():
     print("DELETE MEMBER")
     member_id = input("Enter Member ID to delete: ")
-    # insert code here
+    confirm = input("Delete this member? [Y/N]: ")
+
+    if confirm.upper() == 'Y':
+        try:
+            db.cursor.execute("DELETE FROM MEMBER WHERE member_id = ?", (member_id,))
+            if db.cursor.rowcount == 0:
+                print("No member found with that ID.")
+            else:
+                db.conn.commit()
+                print("Member deleted successfully.")
+        except Exception as e:
+            print("An error occurred while deleting the member:", e)
+    else:
+        print("Deletion cancelled.")
     input("Press Enter to return...")
 
 @screen
