@@ -43,15 +43,16 @@ def add_member():
     else:
         try:
             db.cursor.execute("SELECT username FROM MEMBER WHERE member_id = ?", (member_id,))
-            result = result = db.cursor.fetchone()
-            member_id = db.get_member_id(username)
+            result = db.cursor.fetchone()
+            
             if result:
                 username = result[0]
-
-                db.cursor.execute("INSERT INTO SERVES (member_id, username, organization_id, role, school_year, semester) VALUES (?, ?, ?, ?, ?, ?)", 
-                                  (member_id, username, organization.organization_id, role, school_year, semester))
+                db.cursor.execute(
+                    "INSERT INTO SERVES (member_id, username, organization_id, role, school_year, semester) VALUES (?, ?, ?, ?, ?, ?)", 
+                    (member_id, username, organization.organization_id, role, school_year, semester))
                 db.conn.commit()
-                print("Member and role added successfully.")
+
+                print("Member role added successfully.")
             else:
                 print("Failed to retrieve member.")
         except Exception as e:
@@ -86,9 +87,9 @@ def search_members():
     try: 
         search_query = f"%{query}%"
         db.cursor.execute("""
-            SELECT member_id, name, student_id, status 
+            SELECT member_id, name, username, status 
             FROM MEMBER 
-            WHERE name LIKE ? OR student_id LIKE ?
+            WHERE name LIKE ? OR username LIKE ?
         """, (search_query, search_query))
         results = db.cursor.fetchall()
 
@@ -97,7 +98,7 @@ def search_members():
         else:
             print("\nMATCHING MEMBERS: ")
             for member in results:
-                print(f"ID: {member[0]} | Name: {member[1]} | Student ID: {member[2]} | Status: {member[3]}")
+                print(f"ID: {member[0]} | Name: {member[1]} | Username: {member[2]} | Status: {member[3]}")
     except Exception as e:
         print("Error while searching members: ", e)
     input("Press Enter to return...")
@@ -112,7 +113,7 @@ def update_member_role_status():
     try:
         db.cursor.execute("""
             UPDATE SERVES 
-            SET role = ?, semester = semester, school_year = school_year 
+            SET role = ?
             WHERE member_id = ?
         """, (role, member_id))
         
