@@ -108,5 +108,25 @@ def update_member_role_status():
     member_id = input("Enter Member ID: ")
     role = input("Enter new role: ")
     status = input("Enter new status: ")
-    # insert code here
+    
+    try:
+        db.cursor.execute("""
+            UPDATE SERVES 
+            SET role = ?, semester = semester, school_year = school_year 
+            WHERE member_id = ?
+        """, (role, member_id))
+        
+        db.cursor.execute("""
+            UPDATE MEMBER 
+            SET status = ?
+            WHERE member_id = ?
+        """, (status, member_id))
+
+        if db.cursor.rowcount == 0:
+            print("No member found with that ID.")
+        else:
+            db.conn.commit()
+            print("Member role/status updated successfully.")
+    except Exception as e:
+        print("Error while updating member role/status:", e)
     input("Press Enter to return...")
