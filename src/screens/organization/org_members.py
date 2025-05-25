@@ -82,7 +82,24 @@ def delete_member():
 def search_members():
     print("SEARCH MEMBERS")
     query = input("Enter name, ID, or keyword: ")
-    # insert code here
+    
+    try: 
+        search_query = f"%{query}%"
+        db.cursor.execute("""
+            SELECT member_id, name, student_id, status 
+            FROM MEMBER 
+            WHERE name LIKE ? OR student_id LIKE ?
+        """, (search_query, search_query))
+        results = db.cursor.fetchall()
+
+        if not results:
+            print("No matching members found.")
+        else:
+            print("\nMATCHING MEMBERS:")
+            for member in results:
+                print(f"ID: {member[0]} | Name: {member[1]} | Student ID: {member[2]} | Status: {member[3]}")
+    except Exception as e:
+        print("Error while searching members:", e)
     input("Press Enter to return...")
 
 @screen
