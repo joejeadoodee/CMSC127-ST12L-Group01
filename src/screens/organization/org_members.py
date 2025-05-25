@@ -73,7 +73,7 @@ def delete_member():
                 db.conn.commit()
                 print("Member deleted successfully.")
         except Exception as e:
-            print("An error occurred while deleting the member:", e)
+            print("An error occurred while deleting the member: ", e)
     else:
         print("Deletion cancelled.")
     input("Press Enter to return...")
@@ -95,11 +95,11 @@ def search_members():
         if not results:
             print("No matching members found.")
         else:
-            print("\nMATCHING MEMBERS:")
+            print("\nMATCHING MEMBERS: ")
             for member in results:
                 print(f"ID: {member[0]} | Name: {member[1]} | Student ID: {member[2]} | Status: {member[3]}")
     except Exception as e:
-        print("Error while searching members:", e)
+        print("Error while searching members: ", e)
     input("Press Enter to return...")
 
 @screen
@@ -108,7 +108,7 @@ def update_member_role_status():
     member_id = input("Enter Member ID: ")
     role = input("Enter new role: ")
     status = input("Enter new status: ")
-    
+
     try:
         db.cursor.execute("""
             UPDATE SERVES 
@@ -128,5 +128,5 @@ def update_member_role_status():
             db.conn.commit()
             print("Member role/status updated successfully.")
     except Exception as e:
-        print("Error while updating member role/status:", e)
+        print("Error while updating member role/status: ", e)
     input("Press Enter to return...")
