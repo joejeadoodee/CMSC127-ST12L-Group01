@@ -1,4 +1,4 @@
-from tabulate import tabulate
+from tabulate import tabulate 
 from src.decorators import screen
 import src.mariadb_connector as db
 from src import organization, navigate
@@ -33,27 +33,30 @@ def manage_members():
 @screen
 def add_member():
     print("ADD MEMBER")
-    name = input("Enter full name: ")
-    username = input("Enter username: ")
+    member_id = input("Enter Member ID: ")
     role = input("Enter role (President/Member/Others): ")
     semester = input("Enter semester: ")
     school_year = input("Enter school year: ")
 
-    if not all([name, username, role]):
+    if not all([member_id, role, semester, school_year]):
         print("Invalid input. All fields are required.")
     else:
-        if db.add_member(name, username):
+        try:
+            db.cursor.execute("SELECT username FROM MEMBER WHERE member_id = ?", (member_id,))
+            result = result = db.cursor.fetchone()
             member_id = db.get_member_id(username)
-            if member_id:
-                db.cursor.execute("INSERT INTO SERVES (member_id, username, organization_id, role, school_year, semester) VALUES (?, ?, ?, ?, ?, ?)", (member_id, username, organization.organization_id, role, school_year, semester))
+            if result:
+                username = result[0]
+
+                db.cursor.execute("INSERT INTO SERVES (member_id, username, organization_id, role, school_year, semester) VALUES (?, ?, ?, ?, ?, ?)", 
+                                  (member_id, username, organization.organization_id, role, school_year, semester))
                 db.conn.commit()
                 print("Member and role added successfully.")
             else:
-                print("Failed to retrieve member ID.")
-        else:
-            print("Failed to add member.")
+                print("Failed to retrieve member.")
+        except Exception as e:
+                print("Error while adding member role: ", e)
     input("Press Enter to return...")
-
 
 @screen
 def delete_member():
