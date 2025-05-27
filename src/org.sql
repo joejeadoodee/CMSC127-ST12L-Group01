@@ -464,19 +464,19 @@ ORDER BY s.member_id, o.name, f.name;
 --View payment history
 SELECT 
     p.payment_id, 
-    o.name AS organization_name, 
-    f.name AS obligation_name, 
-    p.amount_paid, 
-    p.payment_date, 
-    p.member_id, 
-    f.due_date
+    m.username,
+    SUM(p.amount_paid), 
+    p.payment_date
 FROM PAYMENT p 
 LEFT JOIN FINANCIAL_OBLIGATION f
     ON f.record_id = p.record_id
 LEFT JOIN ORGANIZATION o
     ON f.organization_id = o.organization_id
-WHERE 
-    p.payment_date > f.due_date
+LEFT JOIN MEMBER m
+    ON m.member_id = p.member_id
+WHERE f.record_id = {insert here}
+GROUP BY
+    m.username
 ORDER BY 
     p.member_id, 
     o.name, 

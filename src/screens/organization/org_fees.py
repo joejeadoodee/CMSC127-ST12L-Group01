@@ -211,15 +211,49 @@ def delete_membership_fee():
     delete_btn = tk.Button(window, text="Delete Fee", command=on_delete)
     delete_btn.pack(pady=20)
 
-
-@screen
 def view_fee_records():
     window = tk.Toplevel()
     window.title("Fee Records")
     window.geometry("1000x400")
 
     columns = ["ID", "Semester", "Academic Year", "Name", "Total Due", "Due Date"]
-    tree = ttk.Treeview(window, columns=columns, show='headings')
+    tree = ttk.Treeview(window, columns=columns, show='headings', selectmode='browse')
+
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, anchor='center')
+
+    tree.pack(expand=True, fill=tk.BOTH)
+
+    def show_payments():
+        selected = tree.selection()
+        if not selected:
+            messagebox.showwarning("No selection", "Please select a record first.")
+            return
+
+        record_id = tree.item(selected[0])["values"][0]
+        open_payment_window(record_id)
+
+    show_button = ttk.Button(window, text="Show Payments", command=show_payments)
+    show_button.pack(pady=10)
+
+    try:
+        db.cursor.execute("SELECT record_id, semester, academic_year, name, total_due, due_date FROM FINANCIAL_OBLIGATION")
+        records = db.cursor.fetchall()
+        for rec in records:
+            due_date_str = str(rec[5]) if rec[5] else ""
+            tree.insert("", tk.END, values=(rec[0], rec[1], rec[2], rec[3], rec[4], due_date_str))
+    except Exception as e:
+        messagebox.showerror("Database Error", f"Failed to retrieve fee records: {e}")
+
+
+def open_payment_window(record_id):
+    payment_window = tk.Toplevel()
+    payment_window.title(f"Payments for Record ID {record_id}")
+    payment_window.geometry("800x300")
+
+    columns = ["Payment ID", "Username", "Total Paid", "Payment Date"]
+    tree = ttk.Treeview(payment_window, columns=columns, show='headings')
 
     for col in columns:
         tree.heading(col, text=col)
@@ -228,12 +262,25 @@ def view_fee_records():
     tree.pack(expand=True, fill=tk.BOTH)
 
     try:
-        db.cursor.execute("SELECT record_id, semester, academic_year, name, total_due, due_date FROM FINANCIAL_OBLIGATION")
-        records = db.cursor.fetchall()
-        for rec in records:
-            # rec[5] (due_date) might be date object, convert to string
-            due_date_str = str(rec[5])
-            tree.insert("", tk.END, values=(rec[0], rec[1], rec[2], rec[3], rec[4], due_date_str))
-    except Exception as e:
-        messagebox.showerror("Database Error", f"Failed to retrieve fee records: {e}")
+        query = """
+        SELECT 
+            p.payment_id, 
+            m.username,
+            SUM(p.amount_paid), 
+            p.payment_date
+        FROM PAYMENT p 
+        LEFT JOIN FINANCIAL_OBLIGATION f ON f.record_id = p.record_id
+        LEFT JOIN ORGANIZATION o ON f.organization_id = o.organization_id
+        LEFT JOIN MEMBER m ON m.member_id = p.member_id
+        WHERE f.record_id = %s
+        GROUP BY m.username
+        ORDER BY p.member_id, o.name, f.name, p.payment_date DESC
+        """
+        db.cursor.execute(query, (record_id,))
+        rows = db.cursor.fetchall()
 
+        for row in rows:
+            tree.insert("", tk.END, values=row)
+
+    except Exception as e:
+        messagebox.showerror("Database Error", f"Failed to retrieve payment records: {e}")
