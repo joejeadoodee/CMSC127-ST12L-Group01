@@ -2,12 +2,14 @@ import tkinter as tk
 from tkinter import messagebox
 from src.decorators import screen
 from src import organization, navigate
+from src.utils import center_window
 
 @screen
 def home():
     root = tk.Tk()
     root.title(f"Welcome, {organization.name}")
     root.geometry("300x250")
+    center_window(root, 300, 250)
 
     def on_manage_members():
         root.destroy()
@@ -48,6 +50,7 @@ def manage_members():
     window = tk.Tk()
     window.title("👥 Manage Members")
     window.geometry("300x300")
+    center_window(window, 300, 300)
 
     def on_add_member():
         window.destroy()
@@ -90,6 +93,7 @@ def manage_fees():
     window = tk.Tk()
     window.title("💰 Manage Fees")
     window.geometry("300x250")
+    center_window(window, 300, 250)
 
     def on_add_fee():
         window.destroy()
@@ -127,6 +131,7 @@ def view_reports():
     window = tk.Tk()
     window.title("📊 View Reports")
     window.geometry("350x450")
+    center_window(window, 350, 450)
 
     def nav_to_report(option):
         window.destroy()

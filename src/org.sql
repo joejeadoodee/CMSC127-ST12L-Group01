@@ -21,7 +21,7 @@ CREATE TABLE MEMBER(
 
 -- create: MEMBER_DEGREE_PROGRAM table
 CREATE TABLE MEMBER_DEGREE_PROGRAM(
-    member_id INT AUTO_INCREMENT NOT NULL,
+    member_id INT NOT NULL,
     username VARCHAR(50) NOT NULL,
     degree_program VARCHAR(100) NOT NULL,
     PRIMARY KEY(member_id, username, degree_program),
@@ -65,7 +65,7 @@ CREATE TABLE PAYMENT(
 
 -- create: SERVES table
 CREATE TABLE SERVES (
-    member_id INT AUTO_INCREMENT NOT NULL,
+    member_id INT NOT NULL,
     username VARCHAR(50) NOT NULL,
     organization_id INT NOT NULL,
     role VARCHAR(100) NOT NULL,

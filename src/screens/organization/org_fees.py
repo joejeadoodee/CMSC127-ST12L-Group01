@@ -111,7 +111,7 @@ def add_membership_fee():
         try:
             db.cursor.execute(
                 "INSERT INTO FINANCIAL_OBLIGATION (name, semester, academic_year, total_due, due_date, organization_id) VALUES (%s, %s, %s, %s, %s, %s)",
-                (name, semester, academic_year, total_due_int, due_date, organization.member_id)
+                (name, semester, academic_year, total_due_int, due_date, organization.organization_id)
             )
             db.conn.commit()
             messagebox.showinfo("Success", "Fee added successfully.")
@@ -216,7 +216,7 @@ def delete_membership_fee():
 def view_fee_records():
     window = tk.Toplevel()
     window.title("Fee Records")
-    window.geometry("800x400")
+    window.geometry("1000x400")
 
     columns = ["ID", "Semester", "Academic Year", "Name", "Total Due", "Due Date"]
     tree = ttk.Treeview(window, columns=columns, show='headings')
