@@ -1,11 +1,18 @@
+import tkinter as tk
 from src.decorators import screen
 import src.mariadb_connector as db
 from src import member, navigate
+from src.utils import center_window
 
 @screen
 def view_organizations():
-    print("MY ORGANIZATIONS\n")
-    
+    window = tk.Tk()  # Root window
+    window.title("My Organizations")
+    window.geometry("500x400")
+    center_window(window, 500, 400)
+
+    tk.Label(window, text="=== MY ORGANIZATIONS ===", font=("Arial", 16, "bold")).pack(pady=10)
+
     try:
         if db.conn is None or db.cursor is None:
             db.connect()
@@ -14,10 +21,9 @@ def view_organizations():
         username = member.username
 
         if not member_id or not username:
-            print("Error: No member is currently logged in.")
-            input("\nPress Enter to go back...")
-            return navigate.to_home('member')
-        
+            tk.Label(window, text="Error: No member is currently logged in.").pack()
+            return
+
         query = """
         SELECT O.name, S.role, S.semester, S.school_year
         FROM SERVES S
@@ -29,16 +35,19 @@ def view_organizations():
         results = db.cursor.fetchall()
 
         if not results:
-            print("You are not currently part of any organizations.")
+            tk.Label(window, text="You are not currently part of any organizations.").pack(pady=10)
         else:
             for i, (org_name, role, semester, year) in enumerate(results, 1):
-                print(f"{i}. Organization: {org_name}")
-                print(f"   Role: {role}")
-                print(f"   Joined: {semester} {year}\n")
+                org_info = (
+                    f"{i}. Organization: {org_name}\n"
+                    f"   Role: {role}\n"
+                    f"   Joined: {semester} {year}\n"
+                )
+                tk.Label(window, text=org_info, justify="left", anchor="w").pack(anchor="w", padx=20, pady=5)
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        tk.Label(window, text=f"An error occurred: {e}", fg="red").pack()
 
-    input("Press Enter to go back...") 
-    navigate.to_home('member')
+    tk.Button(window, text="Return", command=lambda: (window.destroy(), navigate.to_home('member'))).pack(pady=20)
 
+    window.mainloop()

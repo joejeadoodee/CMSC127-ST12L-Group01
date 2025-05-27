@@ -1,71 +1,73 @@
+from tkinter import messagebox, simpledialog
 from tabulate import tabulate
 from src.decorators import screen
 import src.mariadb_connector as db
 from src import organization, navigate
+import tkinter as tk
+from tkinter import ttk
 
-@screen
+import tkinter as tk
+from tkinter import ttk
+
 def view_reports():
-    while True:
-        print("VIEW REPORTS")
-        print("[1] Member Overview")
-        print("[2] Unpaid Members")
-        print("[3] Executive Committee")
-        print("[4] Historical Roles")
-        print("[5] Late Payments")
-        print("[6] Member Status Analytics")
-        print("[7] Alumni Report")
-        print("[8] Financial Summary")
-        print("[9] Member with Highest Debt")
-        print("[0] Back")
+    win = tk.Tk()
+    win.title("View Reports")
+    win.geometry("400x500")
+    
+    label = ttk.Label(win, text="VIEW REPORTS", font=("Arial", 16, "bold"))
+    label.pack(pady=10)
 
-        user_input = input("Enter option: ")
+    # Map option labels to their handler functions
+    options = [
+        ("Member Overview", member_overview),
+        ("Unpaid Members", unpaid_members),
+        ("Executive Committee", executive_committee),
+        ("Historical Roles", historical_roles),
+        ("Late Payments", late_payments),
+        ("Member Status Analytics", member_status_analytics),
+        ("Alumni Report", alumni_report),
+        ("Financial Summary", financial_summary),
+        ("Member with Highest Debt", member_with_highest_debt)
+    ]
 
-        if user_input == '1':
-            member_overview()
-        elif user_input == '2':
-            unpaid_members()
-        elif user_input == '3':
-            executive_committee()
-        elif user_input == '4':
-            historical_roles()
-        elif user_input == '5':
-            late_payments()
-        elif user_input == '6':
-            member_status_analytics()
-        elif user_input == '7':
-            alumni_report()
-        elif user_input == '8':
-            financial_summary()
-        elif user_input == '9':
-            member_with_highest_debt()
-        elif user_input == '0':
-            return navigate.to_home('organization')
-        else:
-            print("Invalid input. Please try again.")
+    # Create a button for each report
+    for text, func in options:
+        btn = ttk.Button(win, text=text, command=func)
+        btn.pack(fill="x", padx=20, pady=5)
+
+    # Back button to close this window and navigate home
+    def back():
+        win.destroy()
+        navigate.to_home('organization')
+
+    back_btn = ttk.Button(win, text="Back", command=back)
+    back_btn.pack(pady=20, fill="x", padx=20)
+
 
 @screen
 def member_overview():
-    print("MEMBER OVERVIEW")
+    win = tk.Toplevel()
+    win.title("Member Overview")
+    win.geometry("1000x400")
+
     organization_id = organization.organization_id
     query = f"""
-       SELECT 
-        m.member_id,
-        m.username,
-        m.name,
-        m.status,
-        m.gender,
-        md.degree_program,
-        m.batch,
-        s.role,
-        s.committee
+        SELECT 
+            m.member_id,
+            m.username,
+            m.name,
+            m.status,
+            m.gender,
+            md.degree_program,
+            m.batch,
+            s.role,
+            s.committee
         FROM 
             SERVES s
         LEFT JOIN 
-            MEMBER m
-        ON m.member_id = s.member_id
+            MEMBER m ON m.member_id = s.member_id
         LEFT JOIN
-            MEMBER_DEGREE_PROGRAM md
-        ON m.member_id = md.member_id
+            MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id
         WHERE 
             s.organization_id = {organization_id}
         GROUP BY 
@@ -73,66 +75,82 @@ def member_overview():
     """
 
     db.cursor.execute(query)
-
     rows = db.cursor.fetchall()
+    headers = ["Member ID", "Username", "Full Name", "Status", "Gender", "Degree Program", "Batch", "Role", "Committee"]
 
-    headers = ["Member id", "Username", "Full Name", "Status", "Gender", "Degree Program", "Batch", "Role", "Committee"]        
+    tree = ttk.Treeview(win, columns=headers, show='headings')
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=120, anchor='center')
 
-    table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
-    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-    print(indented_table)
-    input("Press Enter to return...")
+    for row in rows:
+        tree.insert('', tk.END, values=row)
 
-@screen
+    tree.pack(expand=True, fill=tk.BOTH)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
+
+
 def unpaid_members():
-    print("UNPAID MEMBERS")
+    win = tk.Toplevel()
+    win.title("Unpaid Members")
+    win.geometry("1000x400")
+
     organization_id = organization.organization_id
     query = f"""
-       SELECT r.organization_id, r.name, r.username, r.semester, r.academic_year, r.obligation_name, r.unpaid_amount, r.due_date  
-       FROM (
-            SELECT s.member_id, m.username, o.organization_id, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
-            COALESCE(p.total_amount_paid, 0) as `total_amount_paid`,
-            (f.total_due - COALESCE(p.total_amount_paid, 0)) AS `unpaid_amount`
+        SELECT r.organization_id, r.name, r.username, r.semester, r.academic_year, r.obligation_name, r.unpaid_amount, r.due_date  
+        FROM (
+            SELECT s.member_id, m.username, o.organization_id, o.name, f.record_id, f.name as obligation_name, f.semester, f.academic_year, f.total_due, f.due_date, 
+                   COALESCE(p.total_amount_paid, 0) as total_amount_paid,
+                   (f.total_due - COALESCE(p.total_amount_paid, 0)) AS unpaid_amount
             FROM SERVES s
-            LEFT JOIN MEMBER m
-            ON s.member_id=m.member_id
-            LEFT JOIN ORGANIZATION o
-            ON o.organization_id=s.organization_id
-            LEFT JOIN FINANCIAL_OBLIGATION f
-            ON o.organization_id=f.organization_id
+            LEFT JOIN MEMBER m ON s.member_id = m.member_id
+            LEFT JOIN ORGANIZATION o ON o.organization_id = s.organization_id
+            LEFT JOIN FINANCIAL_OBLIGATION f ON o.organization_id = f.organization_id
             LEFT JOIN (
-                SELECT record_id, member_id, SUM(amount_paid) `total_amount_paid`
-                FROM PAYMENT p
+                SELECT record_id, member_id, SUM(amount_paid) AS total_amount_paid
+                FROM PAYMENT
                 GROUP BY record_id, member_id
-            ) p
-            ON f.record_id=p.record_id AND s.member_id=p.member_id
-            WHERE f.record_id IS NOT NULL AND o.organization_id = {organization_id} AND (f.total_due - COALESCE(p.total_amount_paid, 0)) > 0
-            ORDER BY s.member_id, o.name, f.name
+            ) p ON f.record_id = p.record_id AND s.member_id = p.member_id
+            WHERE f.record_id IS NOT NULL
+              AND o.organization_id = {organization_id}
+              AND (f.total_due - COALESCE(p.total_amount_paid, 0)) > 0
         ) r
-        ORDER BY r.name, r.username, r.obligation_name, `unpaid_amount` DESC;
+        ORDER BY r.name, r.username, r.obligation_name, r.unpaid_amount DESC;
     """
 
     db.cursor.execute(query)
-
     rows = db.cursor.fetchall()
-    result = []
-    for row in rows:
-        result.append(row[2:])
+    headers = ["Organization Name", "Username", "Semester", "Academic Year", "Obligation", "Unpaid Amount", "Due Date"]
+    processed_rows = [row[1:] for row in rows]
 
-    headers = ["Username", "Semester", "Academic Year", "Obligation title", "Unpaid amount", "Due date"]        
+    tree = ttk.Treeview(win, columns=headers, show='headings')
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=140, anchor='center')
 
-    table_str = tabulate(result, headers=headers, tablefmt="fancy_grid")
-    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-    print(indented_table)
-    input("Press Enter to return...")
+    for row in processed_rows:
+        tree.insert('', tk.END, values=row)
 
-@screen
+    tree.pack(expand=True, fill=tk.BOTH)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
+
+
 def executive_committee():
-    print("EXECUTIVE COMMITTEE")
+    win = tk.Toplevel()
+    win.title("Executive Committee")
+    win.geometry("900x450")
 
     organization_id = organization.organization_id 
-    school_year = input("Enter school year (e.g., 2024-2025): ")
-    semester = input("Enter semester (1st Semester/2nd Semester/Mid Semester): ")
+
+    # Input dialogs for school_year and semester
+    school_year = simpledialog.askstring("Input", "Enter school year (e.g., 2024-2025):", parent=win)
+    if not school_year:
+        win.destroy()
+        return
+    semester = simpledialog.askstring("Input", "Enter semester (1st Semester/2nd Semester/Mid Semester):", parent=win)
+    if not semester:
+        win.destroy()
+        return
 
     query = f"""
         SELECT 
@@ -159,18 +177,29 @@ def executive_committee():
     rows = db.cursor.fetchall()
 
     headers = ["Member ID", "Username", "Name", "Role", "Committee", "School Year", "Organization ID"]
-    table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
-    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-    print(indented_table)
 
-    input("Press Enter to return...")
+    tree = ttk.Treeview(win, columns=headers, show='headings')
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=120, anchor='center')
+    for row in rows:
+        tree.insert('', tk.END, values=row)
+
+    tree.pack(expand=True, fill=tk.BOTH)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
 
-@screen
 def historical_roles():
-    print("HISTORICAL ROLES")
+    win = tk.Toplevel()
+    win.title("Historical Roles")
+    win.geometry("1100x500")
+
     organization_id = organization.organization_id
-    role = input("Enter the role you want to view: ")
+    role = simpledialog.askstring("Input", "Enter the role you want to view:", parent=win)
+    if not role:
+        win.destroy()
+        return
+
     query = f"""
        SELECT 
         m.member_id,
@@ -187,11 +216,9 @@ def historical_roles():
         FROM 
             SERVES s
         LEFT JOIN 
-            MEMBER m
-        ON m.member_id = s.member_id
+            MEMBER m ON m.member_id = s.member_id
         LEFT JOIN
-            MEMBER_DEGREE_PROGRAM md
-        ON m.member_id = md.member_id
+            MEMBER_DEGREE_PROGRAM md ON m.member_id = md.member_id
         WHERE 
             s.organization_id = {organization_id} AND
             s.role = '{role}'
@@ -201,20 +228,27 @@ def historical_roles():
     """
 
     db.cursor.execute(query)
-
     rows = db.cursor.fetchall()
 
-    headers = ["Member id", "Username", "Full Name", "Status", "Gender", "Degree Program", "Batch", "Role", "Committee", "School Year", "Semester"]        
+    headers = ["Member ID", "Username", "Full Name", "Status", "Gender", "Degree Program", "Batch", "Role", "Committee", "School Year", "Semester"]
 
-    table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
-    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-    print(indented_table)
-    input("Press Enter to return...")
+    tree = ttk.Treeview(win, columns=headers, show='headings')
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=120, anchor='center')
+
+    for row in rows:
+        tree.insert('', tk.END, values=row)
+
+    tree.pack(expand=True, fill=tk.BOTH)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
 
-@screen
 def late_payments():
-    print("LATE PAYMENTS")
+    win = tk.Toplevel()
+    win.title("Late Payments")
+    win.geometry("1000x450")
+
     organization_id = organization.organization_id
     query = f"""
         SELECT 
@@ -226,10 +260,8 @@ def late_payments():
             p.member_id, 
             f.due_date
         FROM PAYMENT p 
-        LEFT JOIN FINANCIAL_OBLIGATION f
-            ON f.record_id = p.record_id
-        LEFT JOIN ORGANIZATION o
-            ON f.organization_id = o.organization_id
+        LEFT JOIN FINANCIAL_OBLIGATION f ON f.record_id = p.record_id
+        LEFT JOIN ORGANIZATION o ON f.organization_id = o.organization_id
         WHERE 
             p.payment_date > f.due_date AND o.organization_id={organization_id}
         ORDER BY 
@@ -250,28 +282,35 @@ def late_payments():
         "Payment Date", 
         "Member ID", 
         "Due Date"
-    ]        
+    ]
 
-    table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
-    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-    print(indented_table)
-    input("Press Enter to return...")
+    tree = ttk.Treeview(win, columns=headers, show='headings')
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=130, anchor='center')
+
+    for row in rows:
+        tree.insert('', tk.END, values=row)
+
+    tree.pack(expand=True, fill=tk.BOTH)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
 
-@screen
 def member_status_analytics():
-    print("MEMBER STATUS ANALYTICS")
-    
-    try:
-        n = int(input("Enter how many recent semesters to analyze (e.g., 5): "))
-        if n == 1:
-            n =2
-    except ValueError:
-        print("Invalid input. Please enter a number.")
-        input("Press Enter to return...")
-        return
+    win = tk.Toplevel()
+    win.title("Member Status Analytics")
+    win.geometry("800x300")
 
     organization_id = organization.organization_id
+
+    # Ask for number of semesters
+    n = simpledialog.askinteger("Input", "Enter how many recent semesters to analyze (e.g., 5):", parent=win, minvalue=1)
+    if n is None:
+        win.destroy()
+        return
+    if n == 1:
+        n = 2
+
     year_threshold_query = f"(YEAR(CURDATE()) - FLOOR({n} / 2))"
 
     query = f"""
@@ -297,37 +336,39 @@ def member_status_analytics():
     db.cursor.execute(query)
     rows = db.cursor.fetchall()
 
-    headers = [
-        "Org ID", 
-        "Active", 
-        "Inactive", 
-        "Total", 
-        "Active %", 
-        "Inactive %"
-    ]
+    headers = ["Org ID", "Active", "Inactive", "Total", "Active %", "Inactive %"]
 
     if not rows:
-        print("No data found for the given criteria.")
-    else:
-        table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
-        indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-        print(indented_table)
+        messagebox.showinfo("Info", "No data found for the given criteria.", parent=win)
+        win.destroy()
+        return
 
-    input("Press Enter to return...")
+    tree = ttk.Treeview(win, columns=headers, show='headings')
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=100, anchor='center')
+
+    for row in rows:
+        tree.insert('', tk.END, values=row)
+
+    tree.pack(expand=True, fill=tk.BOTH)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
 
-@screen
 def alumni_report():
-    print("ALUMNI REPORT")
-    
+    win = tk.Toplevel()
+    win.title("Alumni Report")
+    win.geometry("1000x400")
+
     organization_id = organization.organization_id
 
-    # Ask the user for a graduation year
-    input_year = input("Enter graduation year (YYYY): ").strip()
-
+    input_year = simpledialog.askstring("Input", "Enter graduation year (YYYY):", parent=win)
+    if input_year is None:
+        win.destroy()
+        return
     if not input_year.isdigit() or len(input_year) != 4:
-        print("Invalid year entered. Aborting.")
-        input("Press Enter to return...")
+        messagebox.showerror("Error", "Invalid year entered. Aborting.", parent=win)
+        win.destroy()
         return
 
     query = f"""
@@ -358,29 +399,36 @@ def alumni_report():
     db.cursor.execute(query)
     rows = db.cursor.fetchall()
 
-    headers = [
-        "Member ID", "Username", "Full Name", "Status", "Gender",
-        "Degree Program", "Batch", "Role", "Committee"
-    ]
+    headers = ["Member ID", "Username", "Full Name", "Status", "Gender",
+               "Degree Program", "Batch", "Role", "Committee"]
 
-    table_str = tabulate(rows, headers=headers, tablefmt="fancy_grid")
-    indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-    print(indented_table)
-    input("Press Enter to return...")
+    tree = ttk.Treeview(win, columns=headers, show='headings')
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=110, anchor='center')
+
+    for row in rows:
+        tree.insert('', tk.END, values=row)
+
+    tree.pack(expand=True, fill=tk.BOTH)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
 
-
-@screen
 def financial_summary():
-    print("FINANCIAL SUMMARY")
-    
-    organization_id = organization.organization_id  # Assuming this is available globally
-    
+    win = tk.Toplevel()
+    win.title("Financial Summary")
+    win.geometry("500x200")
+
+    organization_id = organization.organization_id
+
     try:
-        input_year = int(input("Enter cutoff year (YYYY): ").strip())
-    except ValueError:
-        print("Invalid year entered. Aborting.")
-        input("Press Enter to return...")
+        input_year = simpledialog.askinteger("Input", "Enter cutoff year (YYYY):", parent=win, minvalue=1900, maxvalue=2100)
+        if input_year is None:
+            win.destroy()
+            return
+    except Exception:
+        messagebox.showerror("Error", "Invalid year entered. Aborting.", parent=win)
+        win.destroy()
         return
 
     query = f"""
@@ -418,54 +466,54 @@ def financial_summary():
     result = db.cursor.fetchone()
 
     if result:
-        print(f"\nAs of the end of {input_year}:")
         total_paid = result[0] if result[0] is not None else 0.0
         total_unpaid = result[1] if result[1] is not None else 0.0
-
-        print(f"\n      Total Paid:   ₱ {total_paid:,.2f}")
-        print(f"      Total Unpaid: ₱ {total_unpaid:,.2f}\n")
+        label_text = (f"As of the end of {input_year}:\n\n"
+                      f"Total Paid:   ₱ {total_paid:,.2f}\n"
+                      f"Total Unpaid: ₱ {total_unpaid:,.2f}")
     else:
-        print("No financial data found.")
+        label_text = "No financial data found."
 
-    input("\nPress Enter to return...")
+    label = ttk.Label(win, text=label_text, justify="center", font=("Segoe UI", 12))
+    label.pack(expand=True, fill=tk.BOTH, padx=20, pady=40)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
-
-@screen
 def member_with_highest_debt():
-    print("MEMBER(S) WITH HIGHEST DEBT")
+    win = tk.Toplevel()
+    win.title("Members with Highest Unpaid Obligations")
+    win.geometry("400x300")
 
     organization_id = organization.organization_id
-    semester = input("Enter semester (1st semester/2nd semester/ Mid semester): ").strip()
-    academic_year = input("Enter academic year (e.g., 2025): ").strip()
+    # You can prompt for semester and academic year if needed:
+    semester = simpledialog.askstring("Input", "Enter semester (e.g., '1st semester'):", parent=win)
+    if not semester:
+        win.destroy()
+        return
+    academic_year = simpledialog.askstring("Input", "Enter academic year (e.g., '2024-2025'):", parent=win)
+    if not academic_year:
+        win.destroy()
+        return
 
     query = f"""
         WITH member_debts AS (
-            SELECT 
-                s.member_id,
-                m.username,
-                SUM(f.total_due - COALESCE(p.total_amount_paid, 0)) AS total_unpaid
-            FROM SERVES s
-            LEFT JOIN MEMBER m ON s.member_id = m.member_id
-            LEFT JOIN ORGANIZATION o ON o.organization_id = s.organization_id
-            LEFT JOIN FINANCIAL_OBLIGATION f ON o.organization_id = f.organization_id
+            SELECT m.username, SUM(f.total_due - COALESCE(p.total_amount_paid, 0)) AS total_unpaid
+            FROM MEMBER m
+            JOIN SERVES s ON m.member_id = s.member_id
+            JOIN FINANCIAL_OBLIGATION f ON s.organization_id = f.organization_id
             LEFT JOIN (
                 SELECT record_id, member_id, SUM(amount_paid) AS total_amount_paid
                 FROM PAYMENT
                 GROUP BY record_id, member_id
-            ) p ON f.record_id = p.record_id AND s.member_id = p.member_id
-            WHERE 
-                f.record_id IS NOT NULL
-                AND o.organization_id = {organization_id}
-                AND f.semester = '{semester}'
-                AND f.academic_year = '{academic_year}'
-            GROUP BY s.member_id, m.username
+            ) p ON f.record_id = p.record_id AND m.member_id = p.member_id
+            WHERE s.organization_id = {organization_id}
+              AND f.semester = '{semester}'
+              AND f.academic_year = '{academic_year}'
+            GROUP BY m.member_id
         ),
         max_debt AS (
             SELECT MAX(total_unpaid) AS highest_debt FROM member_debts
         )
-        SELECT 
-            d.username, 
-            d.total_unpaid
+        SELECT d.username, d.total_unpaid
         FROM member_debts d
         JOIN max_debt m ON d.total_unpaid = m.highest_debt
         WHERE d.total_unpaid > 0;
@@ -475,12 +523,20 @@ def member_with_highest_debt():
     rows = db.cursor.fetchall()
 
     if not rows:
-        print("\n      No members have unpaid obligations for that semester and academic year.")
-    else:
-        headers = ["Username", "Total Unpaid (₱)"]
-        table_str = tabulate(rows, headers=headers, floatfmt=".2f", tablefmt="fancy_grid")
-        indented_table = "\n".join([f"      {line}" for line in table_str.splitlines()])
-        print(indented_table)
+        messagebox.showinfo("Info", "No members have unpaid obligations for that semester and academic year.", parent=win)
+        win.destroy()
+        return
 
-    input("\nPress Enter to return...")
+    headers = ["Username", "Total Unpaid (₱)"]
+    tree = ttk.Treeview(win, columns=headers, show="headings")
+    for header in headers:
+        tree.heading(header, text=header)
+        tree.column(header, width=180, anchor="center")
+
+    for row in rows:
+        tree.insert("", tk.END, values=(row[0], f"{row[1]:,.2f}"))
+
+    tree.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=5)
+
 

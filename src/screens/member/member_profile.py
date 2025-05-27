@@ -1,30 +1,33 @@
-from src.decorators import screen
+import tkinter as tk
+from tkinter import messagebox
 from src import member, navigate
 import src.mariadb_connector as db
+from src.utils import center_window
 
-@screen
 def view_profile():
-    print("=== MY PROFILE ===\n")
+    window = tk.Tk()
+    window.title("My Profile")
+    window.geometry("400x350")
+    center_window(window, 400, 400)
 
-    # Default if no degree program is found
+
+    tk.Label(window, text="=== MY PROFILE ===", font=("Arial", 16, "bold")).pack(pady=10)
+
+    # Fetch degree program
     degree_program = "Not available"
-
     try:
-        # Secure query using parameterized SQL
         db.cursor.execute("""
             SELECT degree_program
             FROM MEMBER_DEGREE_PROGRAM
             WHERE member_id = %s
         """, (member.member_id,))
         result = db.cursor.fetchone()
-
         if result:
             degree_program = result[0]
-
     except Exception as e:
-        degree_program = f"Error retrieving program: {e}"
+        degree_program = f"Error: {e}"
 
-    # Print profile details
+    # Profile info dictionary
     profile_fields = {
         "Name": member.name or "Not provided",
         "Username": member.username or "Not provided",
@@ -34,8 +37,9 @@ def view_profile():
         "Degree Program": degree_program
     }
 
+    # Display profile fields
     for label, value in profile_fields.items():
-        print(f"{label:<15}: {value}")
+        tk.Label(window, text=f"{label:<15}: {value}", anchor='w', justify='left').pack(anchor='w', padx=20, pady=2)
 
-    input("\nPress Enter to return...")
-    navigate.to_home('member')
+    # Return button
+    tk.Button(window, text="Return", command=lambda: (window.destroy(), navigate.to_home('member'))).pack(pady=20)

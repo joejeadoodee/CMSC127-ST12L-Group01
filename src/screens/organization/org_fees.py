@@ -1,146 +1,239 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
 from src.decorators import screen
 import src.mariadb_connector as db
 from src import organization, navigate
+import datetime
+
 
 @screen
 def manage_fees():
-    while True:
-        print("MANAGE FEES")
-        print("[1] Add Membership Fee")
-        print("[2] Update Membership Fee")
-        print("[3] Delete Membership Fee")
-        print("[4] View Fee Records")
-        print("[5] Generate Financial Report")
-        print("[0] Back")
+    root = tk.Tk()
+    root.title("Manage Fees")
+    root.geometry("350x300")
 
-        user_input = input("Enter option: ")
+    def on_add_fee():
+        root.withdraw()
+        add_membership_fee()
+        root.deiconify()
 
-        if user_input == '1':
-            add_membership_fee()
-        elif user_input == '2':
-            update_membership_fee()
-        elif user_input == '3':
-            delete_membership_fee()
-        elif user_input == '4':
-            view_fee_records()
-        elif user_input == '5':
-            generate_financial_report()
-        elif user_input == '0':
-            return navigate.to_home('organization')
-        else:
-            print("Invalid input. Please try again.")
+    def on_update_fee():
+        root.withdraw()
+        update_membership_fee()
+        root.deiconify()
+
+    def on_delete_fee():
+        root.withdraw()
+        delete_membership_fee()
+        root.deiconify()
+
+    def on_view_fees():
+        root.withdraw()
+        view_fee_records()
+        root.deiconify()
+
+    def on_back():
+        root.destroy()
+        navigate.to_home('organization')
+
+    label = tk.Label(root, text="MANAGE FEES", font=("Arial", 16))
+    label.pack(pady=15)
+
+    btn_add = tk.Button(root, text="Add Membership Fee", width=25, command=on_add_fee)
+    btn_add.pack(pady=5)
+
+    btn_update = tk.Button(root, text="Update Membership Fee", width=25, command=on_update_fee)
+    btn_update.pack(pady=5)
+
+    btn_delete = tk.Button(root, text="Delete Membership Fee", width=25, command=on_delete_fee)
+    btn_delete.pack(pady=5)
+
+    btn_view = tk.Button(root, text="View Fee Records", width=25, command=on_view_fees)
+    btn_view.pack(pady=5)
+
+
+    btn_back = tk.Button(root, text="Back", width=25, command=on_back)
+    btn_back.pack(pady=10)
+
+    root.mainloop()
+
 
 @screen
 def add_membership_fee():
-    print("ADD MEMBERSHIP FEE")
-    name = input("Enter fee name: ")
-    semester = input("Enter semester: ")
-    academic_year = input("Enter academic year: ")
-    
-    try:
-        total_due = int(input("Enter total due amount: "))
-        due_date = input("Enter due date (YYYY-MM-DD): ")
-    except ValueError:
-        print("Invalid input. Please enter valid numbers for total due and correct date format.")
-        input("Press Enter to return...")  #Prompt to return
-        return
+    window = tk.Toplevel()
+    window.title("Add Membership Fee")
+    window.geometry("400x350")
 
-    try:
-        db.cursor.execute(
-            "INSERT INTO FINANCIAL_OBLIGATION (name, semester, academic_year, total_due, due_date, organization_id) VALUES (%s, %s, %s, %s, %s, %s)",
-            (name, semester, academic_year, total_due, due_date, organization.member_id)
-        )
-        db.conn.commit()
-        print("Fee added successfully.")
-    except Exception as e:
-        print("Failed to add fee:", e)
+    tk.Label(window, text="Fee Name:").pack(pady=5)
+    name_entry = tk.Entry(window, width=30)
+    name_entry.pack()
 
-    input("Press Enter to return...")
+    tk.Label(window, text="Semester:").pack(pady=5)
+    semester_entry = tk.Entry(window, width=30)
+    semester_entry.pack()
+
+    tk.Label(window, text="Academic Year:").pack(pady=5)
+    academic_year_entry = tk.Entry(window, width=30)
+    academic_year_entry.pack()
+
+    tk.Label(window, text="Total Due Amount:").pack(pady=5)
+    total_due_entry = tk.Entry(window, width=30)
+    total_due_entry.pack()
+
+    tk.Label(window, text="Due Date (YYYY-MM-DD):").pack(pady=5)
+    due_date_entry = tk.Entry(window, width=30)
+    due_date_entry.pack()
+
+    def on_submit():
+        name = name_entry.get().strip()
+        semester = semester_entry.get().strip()
+        academic_year = academic_year_entry.get().strip()
+        total_due = total_due_entry.get().strip()
+        due_date = due_date_entry.get().strip()
+
+        if not all([name, semester, academic_year, total_due, due_date]):
+            messagebox.showwarning("Missing Data", "Please fill in all fields.")
+            return
+
+        try:
+            total_due_int = int(total_due)
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Total due must be a number.")
+            return
+
+        # Basic date validation
+        try:
+            datetime.datetime.strptime(due_date, "%Y-%m-%d")
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Due date must be in YYYY-MM-DD format.")
+            return
+
+        try:
+            db.cursor.execute(
+                "INSERT INTO FINANCIAL_OBLIGATION (name, semester, academic_year, total_due, due_date, organization_id) VALUES (%s, %s, %s, %s, %s, %s)",
+                (name, semester, academic_year, total_due_int, due_date, organization.member_id)
+            )
+            db.conn.commit()
+            messagebox.showinfo("Success", "Fee added successfully.")
+            window.destroy()
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to add fee: {e}")
+
+    submit_btn = tk.Button(window, text="Add Fee", command=on_submit)
+    submit_btn.pack(pady=20)
+
 
 @screen
 def update_membership_fee():
-    print("UPDATE MEMBERSHIP FEE")
-    fee_id = input("Enter Fee ID to update: ")
-    
-    try:
-        new_amount = int(input("Enter new total due amount: "))  # Validate input as integer
-    except ValueError:
-        print("Invalid amount. Please enter a valid number.")
-        input("Press Enter to return...")  # Prompt to return
-        return
+    window = tk.Toplevel()
+    window.title("Update Membership Fee")
+    window.geometry("350x250")
 
-    # Update the fee in the database
-    try:
-        db.cursor.execute(
-            "UPDATE FINANCIAL_OBLIGATION SET total_due = %s WHERE record_id = %s",
-            (new_amount, fee_id)
-        )
-        
-        # Check if the update affected any rows
-        if db.cursor.rowcount > 0:
-            db.conn.commit()
-            print("Fee updated successfully.")
-        else:
-            print("No fee found with the provided Fee ID.")
-    except Exception as e:
-        print("Failed to update fee:", e)
+    tk.Label(window, text="Fee ID to update:").pack(pady=5)
+    fee_id_entry = tk.Entry(window, width=30)
+    fee_id_entry.pack()
 
-    input("Press Enter to return...")
+    tk.Label(window, text="New Total Due Amount:").pack(pady=5)
+    new_amount_entry = tk.Entry(window, width=30)
+    new_amount_entry.pack()
+
+    def on_update():
+        fee_id = fee_id_entry.get().strip()
+        new_amount = new_amount_entry.get().strip()
+
+        if not fee_id or not new_amount:
+            messagebox.showwarning("Missing Data", "Please fill in all fields.")
+            return
+
+        if not fee_id.isdigit():
+            messagebox.showerror("Invalid Input", "Fee ID must be numeric.")
+            return
+
+        try:
+            new_amount_int = int(new_amount)
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Total due amount must be a number.")
+            return
+
+        try:
+            db.cursor.execute(
+                "UPDATE FINANCIAL_OBLIGATION SET total_due = %s WHERE record_id = %s",
+                (new_amount_int, fee_id)
+            )
+            if db.cursor.rowcount > 0:
+                db.conn.commit()
+                messagebox.showinfo("Success", "Fee updated successfully.")
+                window.destroy()
+            else:
+                messagebox.showwarning("Not Found", "No fee found with the provided Fee ID.")
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to update fee: {e}")
+
+    update_btn = tk.Button(window, text="Update Fee", command=on_update)
+    update_btn.pack(pady=20)
+
 
 @screen
 def delete_membership_fee():
-    print("DELETE MEMBERSHIP FEE")
-    fee_id = input("Enter Fee ID to delete: ")
+    window = tk.Toplevel()
+    window.title("Delete Membership Fee")
+    window.geometry("300x180")
 
-    # Validate existence of Fee ID
-    if not fee_id.isdigit():
-        print("Invalid Fee ID. Please enter a numeric value.")
-        input("Press Enter to return...")
-        return
+    tk.Label(window, text="Fee ID to delete:").pack(pady=5)
+    fee_id_entry = tk.Entry(window, width=30)
+    fee_id_entry.pack()
 
-    # Delete the fee from the database
-    try:
-        db.cursor.execute(
-            "DELETE FROM FINANCIAL_OBLIGATION WHERE record_id = %s",
-            (fee_id,)
-        )
-        
-        # Check if any rows were affected
-        if db.cursor.rowcount > 0:
-            db.conn.commit()
-            print("Fee deleted successfully.")
-        else:
-            print("No fee found with the provided Fee ID.")
-    except Exception as e:
-        print("Failed to delete fee:", e)
+    def on_delete():
+        fee_id = fee_id_entry.get().strip()
 
-    input("Press Enter to return...")
+        if not fee_id:
+            messagebox.showwarning("Missing Data", "Please enter Fee ID.")
+            return
 
+        if not fee_id.isdigit():
+            messagebox.showerror("Invalid Input", "Fee ID must be numeric.")
+            return
+
+        try:
+            db.cursor.execute(
+                "DELETE FROM FINANCIAL_OBLIGATION WHERE record_id = %s",
+                (fee_id,)
+            )
+            if db.cursor.rowcount > 0:
+                db.conn.commit()
+                messagebox.showinfo("Success", "Fee deleted successfully.")
+                window.destroy()
+            else:
+                messagebox.showwarning("Not Found", "No fee found with the provided Fee ID.")
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to delete fee: {e}")
+
+    delete_btn = tk.Button(window, text="Delete Fee", command=on_delete)
+    delete_btn.pack(pady=20)
+
+
+@screen
 def view_fee_records():
-    print("VIEW FEE RECORDS")
+    window = tk.Toplevel()
+    window.title("Fee Records")
+    window.geometry("800x400")
+
+    columns = ["ID", "Semester", "Academic Year", "Name", "Total Due", "Due Date"]
+    tree = ttk.Treeview(window, columns=columns, show='headings')
+
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, anchor='center')
+
+    tree.pack(expand=True, fill=tk.BOTH)
 
     try:
-        db.cursor.execute("SELECT * FROM FINANCIAL_OBLIGATION")
+        db.cursor.execute("SELECT record_id, semester, academic_year, name, total_due, due_date FROM FINANCIAL_OBLIGATION")
         records = db.cursor.fetchall()
-        
-        # Check if any records were found
-        if records:
-            # Print table header
-            print(f"{'ID':<10} {'Name':<30} {'Semester':<15} {'Academic Year':<15} {'Total Due':<15} {'Due Date':<15}")
-            print("-" * 100)
-            
-            # Print each record in a formatted row
-            for record in records:
-                due_date = str(record[5])  # Directly convert due_date to string
-                print(f"{record[0]:<10} {record[3]:<30} {record[1]:<15} {record[2]:<15} {record[4]:<15} {due_date:<15}")
-        else:
-            print("No fee records found.")
+        for rec in records:
+            # rec[5] (due_date) might be date object, convert to string
+            due_date_str = str(rec[5])
+            tree.insert("", tk.END, values=(rec[0], rec[1], rec[2], rec[3], rec[4], due_date_str))
     except Exception as e:
-        print("Failed to retrieve fee records:", e)
+        messagebox.showerror("Database Error", f"Failed to retrieve fee records: {e}")
 
-    input("Press Enter to return...")
-
-def generate_financial_report():
-    print("GENERATE FINANCIAL REPORT")
-    # insert code here
-    input("Press Enter to return...")
