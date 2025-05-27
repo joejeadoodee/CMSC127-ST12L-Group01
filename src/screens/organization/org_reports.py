@@ -478,65 +478,66 @@ def financial_summary():
     label.pack(expand=True, fill=tk.BOTH, padx=20, pady=40)
     ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
+
 def member_with_highest_debt():
     win = tk.Toplevel()
     win.title("Members with Highest Unpaid Obligations")
-    win.geometry("400x300")
+    win.geometry("600x300")
 
     organization_id = organization.organization_id
-    # You can prompt for semester and academic year if needed:
-    semester = simpledialog.askstring("Input", "Enter semester (e.g., '1st semester'):", parent=win)
+    semester = simpledialog.askstring("Input", "Enter Semester (e.g., '1st Semester'):", parent=win)
     if not semester:
         win.destroy()
         return
-    academic_year = simpledialog.askstring("Input", "Enter academic year (e.g., '2024-2025'):", parent=win)
+    academic_year = simpledialog.askstring("Input", "Enter academic year (e.g., '2025'):", parent=win)
     if not academic_year:
         win.destroy()
         return
 
     query = f"""
-        WITH member_debts AS (
-            SELECT m.username, SUM(f.total_due - COALESCE(p.total_amount_paid, 0)) AS total_unpaid
-            FROM MEMBER m
-            JOIN SERVES s ON m.member_id = s.member_id
-            JOIN FINANCIAL_OBLIGATION f ON s.organization_id = f.organization_id
+        SELECT DISTINCT r.username, r.obligation_name, r.unpaid_amount FROM (
+            SELECT s.member_id, m.username, o.organization_id, o.name, f.record_id, f.name as obligation_name, f.semester, f.academic_year, f.total_due, f.due_date, 
+                   COALESCE(p.total_amount_paid, 0) as total_amount_paid,
+                   (f.total_due - COALESCE(p.total_amount_paid, 0)) AS unpaid_amount
+            FROM SERVES s
+            LEFT JOIN MEMBER m ON s.member_id = m.member_id
+            LEFT JOIN ORGANIZATION o ON o.organization_id = s.organization_id
+            LEFT JOIN FINANCIAL_OBLIGATION f ON o.organization_id = f.organization_id
             LEFT JOIN (
                 SELECT record_id, member_id, SUM(amount_paid) AS total_amount_paid
                 FROM PAYMENT
                 GROUP BY record_id, member_id
-            ) p ON f.record_id = p.record_id AND m.member_id = p.member_id
-            WHERE s.organization_id = {organization_id}
-              AND f.semester = '{semester}'
-              AND f.academic_year = '{academic_year}'
-            GROUP BY m.member_id
-        ),
-        max_debt AS (
-            SELECT MAX(total_unpaid) AS highest_debt FROM member_debts
-        )
-        SELECT d.username, d.total_unpaid
-        FROM member_debts d
-        JOIN max_debt m ON d.total_unpaid = m.highest_debt
-        WHERE d.total_unpaid > 0;
+            ) p ON f.record_id = p.record_id AND s.member_id = p.member_id
+            WHERE f.record_id IS NOT NULL 
+              AND o.organization_id = {organization_id}
+              AND (f.total_due - COALESCE(p.total_amount_paid, 0)) > 0
+              AND f.semester = '{semester}' 
+              AND f.academic_year = {academic_year}
+        ) r
+        ORDER BY r.username, r.unpaid_amount DESC;
     """
 
-    db.cursor.execute(query)
-    rows = db.cursor.fetchall()
+    try:
+        db.cursor.execute(query)
+        rows = db.cursor.fetchall()
+    except Exception as e:
+        messagebox.showerror("Database Error", f"Error fetching data: {e}", parent=win)
+        win.destroy()
+        return
 
     if not rows:
         messagebox.showinfo("Info", "No members have unpaid obligations for that semester and academic year.", parent=win)
         win.destroy()
         return
 
-    headers = ["Username", "Total Unpaid (₱)"]
+    headers = ["Username", "Obligation", "Unpaid Amount (₱)"]
     tree = ttk.Treeview(win, columns=headers, show="headings")
     for header in headers:
         tree.heading(header, text=header)
-        tree.column(header, width=180, anchor="center")
+        tree.column(header, width=200, anchor="center")
 
     for row in rows:
-        tree.insert("", tk.END, values=(row[0], f"{row[1]:,.2f}"))
+        tree.insert("", tk.END, values=(row[0], row[1], f"{row[2]:,.2f}"))
 
     tree.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
     ttk.Button(win, text="Close", command=win.destroy).pack(pady=5)
-
-

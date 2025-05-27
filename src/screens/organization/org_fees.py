@@ -266,14 +266,13 @@ def open_payment_window(record_id):
         SELECT 
             p.payment_id, 
             m.username,
-            SUM(p.amount_paid), 
+            p.amount_paid, 
             p.payment_date
         FROM PAYMENT p 
         LEFT JOIN FINANCIAL_OBLIGATION f ON f.record_id = p.record_id
         LEFT JOIN ORGANIZATION o ON f.organization_id = o.organization_id
         LEFT JOIN MEMBER m ON m.member_id = p.member_id
         WHERE f.record_id = %s
-        GROUP BY m.username
         ORDER BY p.member_id, o.name, f.name, p.payment_date DESC
         """
         db.cursor.execute(query, (record_id,))

@@ -486,7 +486,7 @@ ORDER BY
 
 
 --View members for a given organization with unpaid membership fees or dues for a given semester and academic year.
-SELECT r.organization_id, r.name, r.username, r.unpaid_amount  FROM (
+SELECT DISTINCT r.username, r.obligation_name, r.unpaid_amount  FROM (
     SELECT s.member_id, m.username, o.organization_id, o.name, f.record_id, f.name as `obligation_name`, f.semester, f.academic_year, f.total_due, f.due_date, 
     COALESCE(p.total_amount_paid, 0) as `total_amount_paid`,
     (f.total_due - COALESCE(p.total_amount_paid, 0)) AS `unpaid_amount`
@@ -503,10 +503,11 @@ SELECT r.organization_id, r.name, r.username, r.unpaid_amount  FROM (
         GROUP BY record_id, member_id
     ) p
     ON f.record_id=p.record_id AND s.member_id=p.member_id
-    WHERE f.record_id IS NOT NULL AND o.organization_id = 1 AND (f.total_due - COALESCE(p.total_amount_paid, 0)) > 0
+    WHERE f.record_id IS NOT NULL AND o.organization_id = 2 AND (f.total_due - COALESCE(p.total_amount_paid, 0)) > 0
     ORDER BY s.member_id, o.name, f.name
 ) r
 ORDER BY r.name, `unpaid_amount` DESC;
+
 
 
 SELECT 
@@ -523,7 +524,8 @@ FROM (
         f.academic_year, 
         f.total_due, 
         f.due_date, 
-        COALESCE(p.total_amount_paid, 0) AS total_amount_paid
+        COALESCE(p.total_amount_paid, 0) AS total_amount_paid,
+        o.organization_id
     FROM SERVES s
     LEFT JOIN MEMBER m ON s.member_id = m.member_id
     LEFT JOIN ORGANIZATION o ON o.organization_id = s.organization_id
@@ -533,7 +535,5 @@ FROM (
         FROM PAYMENT
         GROUP BY record_id, member_id
     ) p ON f.record_id = p.record_id AND s.member_id = p.member_id
-    WHERE f.record_id IS NOT NULL
-      AND o.organization_id = 1                -- ← your target organization_id
-      AND f.due_date <= 2022-05-25                      -- ← your target cutoff date (e.g., '2025-05-25')
+    WHERE f.record_id IS NOT NULL AND o.organization_id = 2               -- ← your target organization_id
 ) AS sub;
